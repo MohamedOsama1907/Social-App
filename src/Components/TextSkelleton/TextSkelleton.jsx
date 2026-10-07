@@ -1,4 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { Skeleton } from "@/Components/ui/skeleton";
 
 export default function TextSkelleton() {
   return (
