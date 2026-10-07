@@ -7,7 +7,7 @@ import {
   getUserProfile,
 } from "../../Components/UserServices/UserServices";
 import Loading from "../../Components/Loading/Loading";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 
 export default function UserProfile() {
   const { id } = useParams();

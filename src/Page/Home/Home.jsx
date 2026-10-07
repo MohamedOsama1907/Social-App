@@ -8,7 +8,7 @@ import TextSkelleton from "../../Components/TextSkelleton/TextSkelleton";
 import CreatePostForm from "../../Components/CreatePostForm/CreatePostForm";
 import { removePostFromList, updatePostInList } from "../../lib/utils";
 import FollowingSuggestions from "../../Components/FollowingSuggestions/FollowingSuggestions";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import EndOfFeed from "../../Components/EndOfFeed/EndOfFeed";
 export default function Home() {
   const [allPosts, setAllPosts] = useState([]);

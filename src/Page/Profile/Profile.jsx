@@ -12,7 +12,7 @@ import {
 import imageCover from "../../assets/background.jpeg";
 // import { uploadProfilePhoto } from "../../Components/UserServices/UserServices";
 import UpdatePhotoModal from "../../Components/UpdatePhotoModal/UpdatePhotoModal";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
 import { getUserProfile } from "../../Components/UserServices/UserServices";
 // User Skelleton as a follower

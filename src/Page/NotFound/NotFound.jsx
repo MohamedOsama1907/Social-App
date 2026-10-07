@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router";
 import { Users, ArrowLeft } from "lucide-react";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 
 export default function NotFound() {
   const navigate = useNavigate();

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import axios from "axios";
 import * as yup from "yup";
 import { LoaderCircle } from "lucide-react";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 export default function Signup() {
   const navigate = useNavigate();
   const [isUserNameExist, setIsUserNameExist] = useState(false);

@@ -7,7 +7,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { useContext, useState } from "react";
 import { UserContext } from "../../Components/Context/use.context";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 
 export default function Login() {
   const { setToken } = useContext(UserContext);

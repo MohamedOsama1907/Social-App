@@ -22,7 +22,7 @@ import {
   changePassword,
   uploadProfilePhoto,
 } from "../../Components/UserServices/UserServices";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 
 export default function SettingsPage({}) {
   const { setToken, token, userInfo, setUserInfo } = useContext(UserContext);

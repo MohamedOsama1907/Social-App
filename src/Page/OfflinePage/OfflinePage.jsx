@@ -1,5 +1,5 @@
 import { WifiOff, RefreshCw } from "lucide-react";
-import { Helmet } from "react-helmet";
+import { Helmet } from "react-helmet-async";
 
 
 
