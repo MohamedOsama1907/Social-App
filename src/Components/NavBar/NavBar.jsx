@@ -150,11 +150,11 @@ export default function NavBar() {
               <img
                 loading="lazy"
                 src={
-                  userInfo.photo ||
+                  userInfo?.photo ||
                   "https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png"
                 }
                 alt={
-                  userInfo.name
+                  userInfo?.name
                     ? `${userInfo.name}'s profile image`
                     : "Profile image"
                 }
@@ -176,11 +176,11 @@ export default function NavBar() {
                     <img
                       loading="lazy"
                       src={
-                        userInfo.photo ||
+                        userInfo?.photo ||
                         "https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png"
                       }
                       alt={
-                        userInfo.name
+                        userInfo?.name
                           ? `${userInfo.name}'s profile image`
                           : "Profile image"
                       }
@@ -189,10 +189,10 @@ export default function NavBar() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-[12px] font-semibold text-[#16161a] truncate">
-                      {userInfo.name}
+                      {userInfo?.name || "Your account"}
                     </p>
                     <p className="text-xs text-[#9a9ba1] truncate">
-                      {userInfo.username ? `@${userInfo.username}` : ""}
+                      {userInfo?.username ? `@${userInfo.username}` : ""}
                     </p>
                   </div>
                 </div>

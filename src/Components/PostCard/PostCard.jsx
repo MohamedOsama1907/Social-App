@@ -201,7 +201,7 @@ export default function PostCard({
                 aria-label="Post actions"
                 className="absolute right-0 top-full z-30 mt-2 w-56 overflow-hidden rounded-xl border border-[#e8e8e6] bg-white p-1.5 shadow-[0_12px_32px_rgba(22,22,26,0.14)]">
                 {/*only the post owner can edit or delete the post */}
-                {userInfo._id === post.user._id && (
+                {userInfo?._id === post.user._id && (
                   <button
                     type="button"
                     role="menuitem"
@@ -243,7 +243,7 @@ export default function PostCard({
                   <span>Copy link</span>
                 </button>
                 {/*only the post owner can edit or delete the post */}
-                {userInfo._id === post.user._id && (
+                {userInfo?._id === post.user._id && (
                   <>
                     <div className="mx-2 my-1 h-px bg-[#eeeeec]" />
                     <button
@@ -352,9 +352,9 @@ export default function PostCard({
                 handleLike();
               }}
               type="button"
-              className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg py-2 transition-colors duration-150 hover:text-[#F33E58] ${post.likes.includes(userInfo._id) ? "text-[#F33E58]" : ""}`}>
+              className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg py-2 transition-colors duration-150 hover:text-[#F33E58] ${post.likes.includes(userInfo?._id) ? "text-[#F33E58]" : ""}`}>
               <Heart
-                className={`size-4 ${post.likes.includes(userInfo._id) ? "fill-current text-[#F33E58]" : ""}`}
+                className={`size-4 ${post.likes.includes(userInfo?._id) ? "fill-current text-[#F33E58]" : ""}`}
                 aria-hidden="true"
               />
               <span>Like</span>
