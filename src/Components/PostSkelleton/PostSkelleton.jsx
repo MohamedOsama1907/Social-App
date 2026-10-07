@@ -1,5 +1,4 @@
-import { Skeleton } from "@/components/ui/skeleton";
-
+import { Skeleton } from "@/Components/ui/skeleton";
 export default function PostSkeleton() {
   return (
     <div className="mx-auto w-full max-w-[900px] px-0 py-2 sm:py-3">

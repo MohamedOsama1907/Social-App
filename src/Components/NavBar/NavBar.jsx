@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router";
 import { House, Bell, CircleUserRound, Settings, LogOut } from "lucide-react";
-import logoImage from "../../Assets/looogo.png";
+import logoImage from "../../assets/looogo.png";
 import { UserContext } from "../../Components/Context/use.context";
 
 export default function NavBar() {
