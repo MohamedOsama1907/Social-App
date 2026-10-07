@@ -159,7 +159,7 @@ export default function SettingsPage({}) {
       <Helmet>
         <title>Settings | Social App</title>
       </Helmet>
-      <main className="w-[calc(100%-2rem)] mx-auto pt-6 lg:pt-10 p-4">
+      <main className="w-[calc(100%-0.3rem)] lg:w-[calc(100%-2rem)] mx-auto pt-6 lg:pt-10 p-2 lg:p-5">
         <div className="mb-4 lg:mb-7 flex items-center gap-2 text-[12px] font-medium text-[#8a8a92]">
           <span>Account</span>
           <ChevronRight size={14} />

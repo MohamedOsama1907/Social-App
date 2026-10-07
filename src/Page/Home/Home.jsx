@@ -58,7 +58,7 @@ export default function Home() {
       {!isInitialLoading ? (
         <>
           <CreatePostForm onPostCreated={getPosts} />
-          <div className="grid  grid-cols-1 xl:grid-cols-[2fr_1fr] gap-4 p-8 lg:p-10">
+          <div className="grid  grid-cols-1 xl:grid-cols-[2fr_1fr] gap-4 p-2 lg:p-10">
             <div className="flex flex-col gap-4">
               {allPosts.map((post) => (
                 <PostCard

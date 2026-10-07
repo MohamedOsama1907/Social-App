@@ -62,9 +62,9 @@ export default function PostDetails() {
     getAllComments();
   }, [id, currentPage]);
   return (
-    <div className=" w-full md:w-[calc(100%-3rem)] xl:w-[calc(100%-8rem)] mx-auto pt-0 mt-6 lg:mt-12 p-6">
+    <div className=" w-full md:w-[calc(100%-0.3rem)] xl:w-[calc(100%-8rem)] mx-auto pt-0 mt-6 lg:mt-12 p-2 lg:p-6">
       {/* Back navigation */}
-      <div className="mb-4 px-4 sm:px-0">
+      <div className="mb-4 sm:px-0">
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -112,7 +112,7 @@ export default function PostDetails() {
       {/* Loaded post */}
       {!loading && !error && post && (
         <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-5 ">
-          <div className="lg:gap-6 md:col-span-2  items-start sticky top-30 h-fit">
+          <div className="lg:gap-6 md:col-span-2  items-start lg:sticky lg:top-30 lg:h-fit">
             <PostCard
               post={post}
               onPostUpdate={handlePostUpdate}

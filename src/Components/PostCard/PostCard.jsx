@@ -130,7 +130,7 @@ export default function PostCard({
     <div className="w-full mx-auto" onClick={onClose}>
       <article
         id={`post-${post._id}`}
-        className="mx-auto w-full  rounded-2xl border border-[#e8e8e6] bg-white shadow-[0_8px_24px_rgba(22,22,26,0.06)]">
+        className="mx-auto w-full rounded-2xl border border-[#e8e8e6] bg-white shadow-[0_8px_24px_rgba(22,22,26,0.06)]">
         <header className="flex items-start justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5 lg:px-7">
           <div className="flex min-w-0 items-center gap-3">
             <Link to={`/profile/${post.user._id}`} className="shrink-0">

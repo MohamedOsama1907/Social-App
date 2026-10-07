@@ -11,7 +11,7 @@ import { Helmet } from "react-helmet-async";
 
 export default function UserProfile() {
   const { id } = useParams();
-  const { token } = useContext(UserContext);  
+  const { token } = useContext(UserContext);
   const [user, setUser] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   async function handleUserProfile() {
@@ -29,7 +29,7 @@ export default function UserProfile() {
     const data = await followUser(token, id);
     if (data.success) {
       setIsFollowing(data.data.isFollowing);
-        await handleUserProfile(); // Refresh user profile to get updated followers count and following state
+      await handleUserProfile(); // Refresh user profile to get updated followers count and following state
     }
   }
   if (!user) {
@@ -57,14 +57,15 @@ export default function UserProfile() {
     : "";
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 sm:py-7">
+    <div className="mx-auto max-w-6xl px-2 w-[calc(100%-0.3rem)] py-5 sm:px-6 sm:py-7">
       <Helmet>
         <title>{user.name} | Social App</title>
       </Helmet>
       <article className="overflow-hidden rounded-2xl border border-[#e8e8e6] bg-white shadow-[0_8px_24px_rgba(22,22,26,0.06)]">
         <div className="relative h-32 overflow-hidden bg-[radial-gradient(ellipse_at_28%_18%,#ffffff_0%,#efefed_56%,#e4e4e1_100%)] sm:h-40 lg:h-48">
           {user.cover ? (
-            <img loading="lazy"
+            <img
+              loading="lazy"
               src={user.cover}
               alt=""
               className="absolute inset-0 size-full object-cover"
@@ -82,7 +83,8 @@ export default function UserProfile() {
         <div className="px-4 pb-5 sm:px-6 sm:pb-6 lg:px-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex min-w-0 items-end gap-3 sm:gap-4">
-              <img loading="lazy"
+              <img
+                loading="lazy"
                 src={user.photo}
                 alt={`${user.name}'s profile`}
                 className="size-20 shrink-0 rounded-full border-4 border-white bg-[#eeeeec] object-cover shadow-[0_8px_24px_rgba(22,22,26,0.12)] sm:size-24 lg:size-28"
@@ -228,7 +230,8 @@ function ConnectionList({ title, count, people }) {
             <li
               key={person._id ?? person.id}
               className="flex items-center gap-3 py-3">
-              <img loading="lazy"
+              <img
+                loading="lazy"
                 src={person.photo}
                 alt=""
                 className="size-9 shrink-0 rounded-full border border-[#16161a]/8 bg-[#f2f2f1] object-cover"

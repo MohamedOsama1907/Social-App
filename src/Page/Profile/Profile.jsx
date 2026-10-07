@@ -231,7 +231,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="w-[calc(100%-2rem)] mx-auto pt-0 p-4">
+    <div className="w-[calc(100%-0.3rem)] lg:w-[calc(100%-3rem)] mx-auto pt-0 p-2">
       <Helmet>
         <title>
           {name
