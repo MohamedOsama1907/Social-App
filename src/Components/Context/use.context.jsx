@@ -5,7 +5,8 @@ import axios from "axios";
 export const UserContext = createContext("");
 
 export default function UserProvider({ children }) {
-  const [token, setToken] = useState(sessionStorage.getItem("token"));
+  // to call it only in the intial render
+  const [token, setToken] = useState(() => sessionStorage.getItem("token"));
   const [userInfo, setUserInfo] = useState(
     JSON.parse(sessionStorage.getItem("userInfo")),
   );

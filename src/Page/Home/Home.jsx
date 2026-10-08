@@ -29,8 +29,6 @@ export default function Home() {
       if (data.success) {
         setAllPosts((prev) => [...prev, ...data.data.posts]);
         setIsInitialLoading(true);
-        console.log("CURRENT PAGE:", currentPage);
-        console.log("POSTS:", data.data.posts);
       }
     } catch (error) {
       console.log(error);

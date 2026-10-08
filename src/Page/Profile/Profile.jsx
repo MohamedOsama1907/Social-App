@@ -29,10 +29,13 @@ function UserRowSkeleton() {
 }
 // Follower, Following Component
 function UserRow({ user }) {
+  const { userInfo } = useContext(UserContext);
+  const userId = user._id ?? user.id;
+  const currentUserId = userInfo?._id ?? userInfo?.id;
   return (
     <li className="flex items-center gap-3 px-4 py-3">
       <Link
-        to={`/profile/${user._id ?? user.id}`}
+        to={userId === currentUserId ? "/my-profile" : `/profile/${userId}`}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16161a]/30">
         <img loading="lazy"
           src={user.photo}
@@ -256,11 +259,13 @@ export default function Profile() {
           <div className="px-4 md:px-6 pb-5 md:pb-6 relative z-10">
             <div className="flex items-end justify-between -mt-10 sm:-mt-12 md:-mt-14">
               <div className="relative size-20 shrink-0 sm:size-24 md:size-28">
+                <Link to="/my-profile" className="block size-full">
                 <img loading="lazy"
                   src={photo}
                   alt={name}
                   className="size-full rounded-full border-4 border-white bg-[#eeeeec] object-cover shadow-[0_1px_2px_rgba(15,15,16,0.04),0_10px_28px_-14px_rgba(15,15,16,0.14)]"
                 />
+                </Link>
                 <button
                   onClick={() => setUploadModal(true)}
                   className="absolute bottom-0 right-0 flex size-8 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-[#16161a] text-white shadow-[0_2px_8px_rgba(22,22,26,0.2)] transition-colors hover:bg-[#303036] focus-within:outline-none focus-within:ring-2 focus-within:ring-[#16161a]/30 focus-within:ring-offset-2 sm:size-9">
@@ -275,12 +280,14 @@ export default function Profile() {
             </div>
 
             <div className="mt-3 md:mt-4">
-              <h1 className="text-[19px] md:text-[22px] font-bold text-[#16161a] tracking-[-0.01em]">
-                {name}
-              </h1>
-              <p className="text-[13px] md:text-[14px] text-gray-500 mt-0.5">
-                @{username}
-              </p>
+              <Link to="/my-profile" className="inline-block">
+                <h1 className="text-[19px] md:text-[22px] font-bold text-[#16161a] tracking-[-0.01em]">
+                  {name}
+                </h1>
+                <p className="text-[13px] md:text-[14px] text-gray-500 mt-0.5">
+                  @{username}
+                </p>
+              </Link>
             </div>
 
             {/* Meta info row */}

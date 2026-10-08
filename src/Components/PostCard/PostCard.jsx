@@ -45,7 +45,11 @@ export default function PostCard({
   const [isFollowing, setIsFollowing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-
+  const currentUserId = userInfo?._id ?? userInfo?.id;
+  const profilePath = (person) => {
+    const personId = person?._id ?? person?.id;
+    return personId === currentUserId ? "/my-profile" : `/profile/${personId}`;
+  };
   const isOwnPost = userInfo?._id === post.user._id;
   function notifyPostUpdate(changes) {
     onPostUpdate?.({ ...post, ...changes }, post.bookmarked);
@@ -133,8 +137,9 @@ export default function PostCard({
         className="mx-auto w-full rounded-2xl border border-[#e8e8e6] bg-white shadow-[0_8px_24px_rgba(22,22,26,0.06)]">
         <header className="flex items-start justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5 lg:px-7">
           <div className="flex min-w-0 items-center gap-3">
-            <Link to={`/profile/${post.user._id}`} className="shrink-0">
-              <img loading="lazy"
+            <Link to={profilePath(post.user)} className="shrink-0">
+              <img
+                loading="lazy"
                 src={post.user.photo}
                 alt={`${post.user.name}'s profile`}
                 className="size-10 rounded-full object-contain sm:size-11"
@@ -143,7 +148,7 @@ export default function PostCard({
             <div className="min-w-0 flex-1">
               <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                 <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                  <Link to={`/profile/${post.user._id}`} className="min-w-0">
+                  <Link to={profilePath(post.user)} className="min-w-0">
                     <h2 className="truncate text-sm font-semibold text-[#16161a] sm:text-base hover:underline">
                       {post.user.name}
                     </h2>
@@ -264,7 +269,7 @@ export default function PostCard({
           </div>
         </header>
 
-        <Link to={`/posts/${post._id}`}>
+        <Link to={`/posts/postDetails/${post._id}`}>
           {post.body && (
             <p className="px-4 pb-5 text-sm leading-6 text-[#16161a] sm:px-6 sm:text-base lg:px-7">
               {post.body}
@@ -276,7 +281,8 @@ export default function PostCard({
                 <div className="h-80 w-full animate-pulse bg-gray-100" />
               )}
 
-              <img loading="lazy"
+              <img
+                loading="lazy"
                 src={post.image}
                 alt={`Post shared by ${post.user.name}`}
                 onLoad={() => setImageLoaded(true)}
@@ -286,22 +292,26 @@ export default function PostCard({
               />
             </div>
           )}
+        </Link>
           {post.sharedPost && (
             <div className="mx-4 mb-5 overflow-hidden rounded-xl border border-[#e8e8e6] bg-[#fafaf9] sm:mx-6 lg:mx-7">
               <div className="flex items-center gap-2.5 px-3.5 py-3 sm:px-4">
-                <img loading="lazy"
+                <Link to={profilePath(post.sharedPost.user)} className="shrink-0">
+                <img
+                  loading="lazy"
                   src={post.sharedPost.user.photo}
                   alt={`${post.sharedPost.user.name}'s profile`}
                   className="size-8 shrink-0 rounded-full object-cover bg-[#f2f2f1]"
                 />
+                </Link>
                 <div className="min-w-0">
                   <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-                    <h3 className="truncate text-xs font-semibold text-[#16161a] sm:text-sm">
+                    <Link to={profilePath(post.sharedPost.user)} className="truncate text-xs font-semibold text-[#16161a] hover:underline sm:text-sm">
                       {post.sharedPost.user.name}
-                    </h3>
-                    <span className="truncate text-xs text-[#707078]">
+                    </Link>
+                    <Link to={profilePath(post.sharedPost.user)} className="truncate text-xs text-[#707078] hover:underline">
                       @{post.sharedPost.user.username}
-                    </span>
+                    </Link>
                   </div>
                   <div className="flex items-center gap-1 text-[11px] text-[#929298] sm:text-xs">
                     <span>{formatPostDate(post.sharedPost.createdAt)}</span>
@@ -319,7 +329,8 @@ export default function PostCard({
               )}
 
               {post.sharedPost.image && (
-                <img loading="lazy"
+                <img
+                  loading="lazy"
                   src={post.sharedPost.image}
                   alt={`Shared post by ${post.sharedPost.user.name}`}
                   className="block max-h-105 w-full object-contain"
@@ -327,7 +338,6 @@ export default function PostCard({
               )}
             </div>
           )}
-        </Link>
         <footer className="px-4 py-4 sm:px-6 lg:px-7">
           <div className="flex items-center justify-between border-b border-[#eeeeec] pb-3 text-xs text-[#707078] sm:text-sm">
             <span
@@ -338,7 +348,7 @@ export default function PostCard({
               {post.likesCount} likes
             </span>
             <div className="flex items-center gap-3">
-              <Link to={`/posts/${post._id}`}>
+              <Link to={`/posts/postDetails/${post._id}`}>
                 {" "}
                 <span>{post.commentsCount} comments</span>
               </Link>
@@ -387,40 +397,33 @@ export default function PostCard({
               <span>{post.bookmarked ? "Saved" : "Save"}</span>
             </button>
           </div>
-
           {post.topComment && showTopComment && (
-            <div className="mt-4 rounded-2xl border border-[#e9e9ed] bg-white p-3 transition-colors hover:border-[#d9d9df] sm:p-4">
-              <div className="mb-2.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-[#85858e]">
-                <MessageCircle size={14} aria-hidden="true" />
-                <span>Top comment</span>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Link
-                  to={`/profile/${post.topComment.commentCreator._id}`}
-                  className="shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-[#16161a]/20"
-                  aria-label={`View ${post.topComment.commentCreator.name}'s profile`}>
-                  <img loading="lazy"
-                    src={post.topComment.commentCreator.photo}
-                    alt=""
-                    className="size-9 rounded-full bg-[#f2f2f1] object-cover ring-2 ring-white"
-                  />
+            <div className="mt-3 rounded-2xl border border-[#eeeeec] bg-[#fafaf9] p-3 sm:p-3.5">
+              <div className="flex items-start gap-2.5">
+                <Link to={profilePath(post.topComment.commentCreator)} className="shrink-0">
+                <img
+                  loading="lazy"
+                  src={post.topComment.commentCreator.photo}
+                  alt=""
+                  className="size-8 shrink-0 rounded-full bg-[#f2f2f1] object-cover"
+                />
                 </Link>
 
-                <div className="min-w-0 flex-1 rounded-2xl rounded-tl-md bg-[#f7f7f8] px-3.5 py-2.5 sm:px-4">
-                  <Link
-                    to={`/profile/${post.topComment.commentCreator._id}`}
-                    className="text-[13px] font-semibold text-[#202026] hover:underline">
-                    {post.topComment.commentCreator.name}
-                  </Link>
+                <div className="min-w-0 flex-1 rounded-xl bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,15,16,0.04)] ring-1 ring-[#f0f0ee]">
+                  <div className="flex flex-wrap items-baseline gap-x-1.5">
+                    <Link to={profilePath(post.topComment.commentCreator)} className="text-xs font-semibold text-[#16161a] hover:underline">
+                      {post.topComment.commentCreator.name}
+                    </Link>
+                    <Link to={profilePath(post.topComment.commentCreator)} className="text-[11px] text-[#929298] hover:underline">
+                      @{post.topComment.commentCreator.username}
+                    </Link>
+                  </div>
 
-                  <Link
-                    to={`/posts/${post._id}`}
-                    className="mt-1 block text-[13px] leading-5 text-[#55555e] hover:text-[#16161a] sm:text-sm">
-                    <p className="break-words whitespace-pre-wrap">
+                  {post.topComment.content && (
+                    <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-[#424249] sm:text-sm">
                       {post.topComment.content}
                     </p>
-                  </Link>
+                  )}
                 </div>
               </div>
             </div>

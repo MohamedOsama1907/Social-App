@@ -110,7 +110,11 @@ export default function FollowingSuggestions() {
                 key={person._id}
                 className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2.5 py-3 sm:gap-3.5 sm:py-3.5">
                 <Link
-                  to={`/profile/${person._id}`}
+                  to={
+                    person._id === (userInfo?._id ?? userInfo?.id)
+                      ? "/my-profile"
+                      : `/profile/${person._id}`
+                  }
                   aria-label={`View ${person.name}'s profile`}
                   className="shrink-0 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16161a]/30 focus-visible:ring-offset-2">
                   <img loading="lazy"
@@ -125,7 +129,11 @@ export default function FollowingSuggestions() {
 
                 <div className="min-w-0">
                   <Link
-                    to={`/profile/${person._id}`}
+                    to={
+                      person._id === (userInfo?._id ?? userInfo?.id)
+                        ? "/my-profile"
+                        : `/profile/${person._id}`
+                    }
                     className="block min-w-0 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16161a]/30">
                     <p className="truncate text-[13px] font-semibold text-[#16161a] transition-colors hover:text-[#4b4b52] sm:text-sm">
                       {person.name}

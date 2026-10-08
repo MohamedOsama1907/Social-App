@@ -1,6 +1,7 @@
 import { Calendar, UserRound, Mail, Users } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { Link } from "react-router";
 import { UserContext } from "../../Components/Context/use.context";
 import {
   followUser,
@@ -11,9 +12,13 @@ import { Helmet } from "react-helmet-async";
 
 export default function UserProfile() {
   const { id } = useParams();
-  const { token } = useContext(UserContext);
+  const { token, userInfo } = useContext(UserContext);
   const [user, setUser] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const currentProfilePath =
+    (user?._id ?? user?.id) === (userInfo?._id ?? userInfo?.id)
+      ? "/my-profile"
+      : `/profile/${user?._id ?? user?.id ?? id}`;
   async function handleUserProfile() {
     const data = await getUserProfile(token, id);
     if (data.success) {
@@ -83,13 +88,16 @@ export default function UserProfile() {
         <div className="px-4 pb-5 sm:px-6 sm:pb-6 lg:px-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div className="flex min-w-0 items-end gap-3 sm:gap-4">
+              <Link to={currentProfilePath} className="shrink-0">
               <img
                 loading="lazy"
                 src={user.photo}
                 alt={`${user.name}'s profile`}
                 className="size-20 shrink-0 rounded-full border-4 border-white bg-[#eeeeec] object-cover shadow-[0_8px_24px_rgba(22,22,26,0.12)] sm:size-24 lg:size-28"
               />
+              </Link>
               <div className="min-w-0 pb-1">
+                <Link to={currentProfilePath} className="block min-w-0">
                 <h1
                   dir="auto"
                   className="truncate text-xl font-bold text-[#16161a] sm:text-2xl">
@@ -98,6 +106,7 @@ export default function UserProfile() {
                 <p className="mt-0.5 truncate text-sm text-[#707078] sm:text-[15px]">
                   @{user.username}
                 </p>
+                </Link>
               </div>
             </div>
 
@@ -216,6 +225,13 @@ export default function UserProfile() {
 }
 
 function ConnectionList({ title, count, people }) {
+  const { userInfo } = useContext(UserContext);
+  const profilePath = (person) => {
+    const personId = person?._id ?? person?.id;
+    return personId === (userInfo?._id ?? userInfo?.id)
+      ? "/my-profile"
+      : `/profile/${personId}`;
+  };
   return (
     <section className="min-w-0 overflow-hidden rounded-2xl border border-[#e8e8e6] bg-white shadow-[0_4px_16px_rgba(22,22,26,0.04)]">
       <header className="flex items-center justify-between border-b border-[#eeeeec] px-4 py-3.5 sm:px-5">
@@ -230,17 +246,17 @@ function ConnectionList({ title, count, people }) {
             <li
               key={person._id ?? person.id}
               className="flex items-center gap-3 py-3">
+              <Link to={profilePath(person)} className="shrink-0">
               <img
                 loading="lazy"
                 src={person.photo}
                 alt=""
                 className="size-9 shrink-0 rounded-full border border-[#16161a]/8 bg-[#f2f2f1] object-cover"
               />
-              <p
-                dir="auto"
-                className="min-w-0 truncate text-sm font-medium text-[#29292d]">
+              </Link>
+              <Link to={profilePath(person)} dir="auto" className="min-w-0 truncate text-sm font-medium text-[#29292d] hover:underline">
                 {person.name}
-              </p>
+              </Link>
             </li>
           ))}
         </ul>

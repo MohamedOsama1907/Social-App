@@ -11,13 +11,21 @@ export default function PostDetails() {
   console.log(id);
 
   const navigate = useNavigate();
-  const { token } = useContext(UserContext);
+  const { token, userInfo } = useContext(UserContext);
   console.log(token);
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [appeartReplies, setAppeartReplies] = useState(null);
+  const [currentReplyPage, setCurrentReplyPage] = useState(1);
   const [allComments, setAllComments] = useState([]);
+  const [allReplieComments, setAllReplieComments] = useState([]);
+  const profilePath = (person) => {
+    const personId = person?._id ?? person?.id;
+    const currentUserId = userInfo?._id ?? userInfo?.id;
+    return personId === currentUserId ? "/my-profile" : `/profile/${personId}`;
+  };
   function handlePostUpdate(updatedPost) {
     setPost(updatedPost);
   }
@@ -39,6 +47,23 @@ export default function PostDetails() {
       setLoading(false);
     }
   }
+  async function getAllReplieComments(commentId, page) {
+    try {
+      const { data } = await axios.request({
+        url: `https://route-posts.routemisr.com/posts/${id}/comments/${commentId}/replies?page=${currentReplyPage}&limit=5`,
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (data.success) {
+        setAllReplieComments((prev) => [...prev, ...data.data.replies]);
+      }
+    } catch (err) {
+      console.log({ err });
+    }
+  }
   // getAllCommentsFunction
   async function getAllComments() {
     try {
@@ -56,7 +81,6 @@ export default function PostDetails() {
   }
   useEffect(() => {
     getPost();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
   useEffect(() => {
     getAllComments();
@@ -111,8 +135,8 @@ export default function PostDetails() {
 
       {/* Loaded post */}
       {!loading && !error && post && (
-        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-5 ">
-          <div className="lg:gap-6 md:col-span-2  items-start lg:sticky lg:top-30 lg:h-fit">
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 ">
+          <div className="lg:gap-6 md:col-span-2 lg:col-span-3 items-start lg:sticky lg:top-30 lg:h-fit">
             <PostCard
               post={post}
               onPostUpdate={handlePostUpdate}
@@ -121,7 +145,7 @@ export default function PostDetails() {
           </div>
 
           {/* The post response provides the count and a top-comment preview. */}
-          <div className="md:col-span-1 min-w-0">
+          <div className="md:col-span-1 lg:col-span-2 min-w-0">
             <div className="rounded-2xl border border-[#e8e8e6] bg-white px-4 py-4 sm:px-6 sm:py-5">
               <h2 className=" text-sm font-semibold text-[#16161a] mb-3">
                 Comments ({post.commentsCount ?? 0})
@@ -148,17 +172,19 @@ export default function PostDetails() {
                     <div
                       key={comment._id}
                       className="flex w-full min-w-0 items-start gap-2.5 py-3">
+                      <Link to={profilePath(comment.commentCreator)} className="shrink-0">
                       <img
                         loading="lazy"
                         src={comment.commentCreator.photo}
                         alt={`${comment.commentCreator.name}'s profile`}
                         className="size-7 shrink-0 rounded-full bg-[#f2f2f1] object-cover sm:size-8"
                       />
+                      </Link>
                       <div className="min-w-0 flex-1">
                         <div className="inline-block w-full min-w-0 max-w-full rounded-2xl bg-[#f2f2f1] px-3.5 py-2.5">
-                          <p className="text-xs font-semibold text-[#16161a] sm:text-[13px]">
+                          <Link to={profilePath(comment.commentCreator)} className="text-xs font-semibold text-[#16161a] hover:underline sm:text-[13px]">
                             {comment.commentCreator.name}
-                          </p>
+                          </Link>
 
                           {comment.content && (
                             <p className="mt-0.5 w-full min-w-0 whitespace-normal break-words text-xs leading-5 text-[#424249] sm:text-[13px]">
@@ -197,12 +223,97 @@ export default function PostDetails() {
                         </div>
 
                         {comment.repliesCount > 0 && (
-                          <button
-                            type="button"
-                            className="mt-1.5 text-[11px] font-semibold text-[#707078] transition-colors duration-150 hover:text-[#16161a] sm:text-xs">
-                            View {comment.repliesCount}{" "}
-                            {comment.repliesCount === 1 ? "reply" : "replies"}
-                          </button>
+                          <>
+                            {appeartReplies ? (
+                              <button
+                                type="button"
+                                aria-expanded="true"
+                                onClick={() => setAppeartReplies(false)}
+                                className="mt-2 inline-flex min-h-8 cursor-pointer items-center rounded-full border border-[#e8e8e6] hover:bg-[#eeeeec] px-3 py-1 text-[11px] font-semibold text-[#424249] transition-colors duration-150   sm:text-xs">
+                                Hide replies
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                aria-expanded="false"
+                                onClick={() => {
+                                  setAppeartReplies(true);
+
+                                  if (allReplieComments.length === 0) {
+                                    getAllReplieComments(comment._id, 1);
+                                  }
+                                }}
+                                className="mt-2 inline-flex min-h-8 cursor-pointer items-center rounded-full border border-transparent bg-transparent px-3 py-1 text-[11px] font-semibold text-[#707078] transition-colors duration-150 hover:border-[#eeeeec] hover:bg-[#fafaf9] hover:text-[#16161a]  sm:text-xs">
+                                View {comment.repliesCount}{" "}
+                                {comment.repliesCount === 1
+                                  ? "reply"
+                                  : "replies"}
+                              </button>
+                            )}
+
+                            {appeartReplies &&
+                              allReplieComments?.map((reply) => (
+                                <div className="relative ml-2 mt-3 pl-3 sm:ml-3 sm:pl-4">
+                                  <span
+                                    aria-hidden="true"
+                                    className="absolute -left-0.5 -top-3 h-6 w-4 rounded-bl-[10px] border-b border-l border-[#e8e8e6] sm:w-5"
+                                  />
+
+                                  <div className="flex min-w-0 items-start gap-2">
+                                    <Link to={profilePath(reply.commentCreator)} className="shrink-0">
+                                    <img
+                                      loading="lazy"
+                                      src={reply.commentCreator.photo}
+                                      alt=""
+                                      className="size-6 shrink-0 rounded-full bg-[#f2f2f1] object-cover sm:size-7"
+                                    />
+                                    </Link>
+
+                                    <div className="min-w-0 flex-1">
+                                      <div className="inline-block max-w-full rounded-2xl rounded-tl-md border border-[#eeeeec] bg-white px-3 py-2 shadow-[0_1px_2px_rgba(15,15,16,0.03)]">
+                                        <div className="flex flex-wrap items-baseline gap-x-1.5">
+                                          <Link to={profilePath(reply.commentCreator)} className="text-xs font-semibold text-[#16161a] hover:underline">
+                                            {reply.commentCreator.name}
+                                          </Link>
+                                          <Link to={profilePath(reply.commentCreator)} className="text-[11px] text-[#929298] hover:underline">
+                                            @{reply.commentCreator.username}
+                                          </Link>
+                                        </div>
+
+                                        {reply.content && (
+                                          <p className="mt-0.5 whitespace-pre-wrap break-words text-xs leading-5 text-[#424249] sm:text-[13px]">
+                                            {reply.content}
+                                          </p>
+                                        )}
+                                      </div>
+
+                                      <div className="mt-1.5 flex flex-wrap items-center gap-x-3.5 gap-y-1 pl-1">
+                                        <button
+                                          type="button"
+                                          className="flex items-center gap-1 text-[11px] font-medium text-[#929298] transition-colors hover:text-[#16161a] sm:text-xs">
+                                          <Heart
+                                            className="size-3.5"
+                                            aria-hidden="true"
+                                          />
+                                          {reply.likesCount ??
+                                            reply.likes?.length ??
+                                            "Like"}
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {allReplieComments > 5 && (
+                                    <button
+                                      className="mx-auto block rounded-xl px-3 py-2 text-sm cursor-pointer bg-gray-200 text-[#16161a]"
+                                      onClick={() => {
+                                        setCurrentReplyPage((page) => page + 1);
+                                      }}>
+                                      Show more{" "}
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                          </>
                         )}
                       </div>
                     </div>

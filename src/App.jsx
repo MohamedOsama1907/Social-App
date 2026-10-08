@@ -1,4 +1,3 @@
-import { BrowserRouter, Route, Routes } from "react-router";
 import Signup from "./Page/Signup/Signup";
 import Home from "./Page/Home/Home";
 import Login from "./Page/Login/Login";
@@ -12,92 +11,82 @@ import UserProvider from "./Components/Context/use.context";
 import ProtectedRoute from "./Components/ProtectedRoute/ProtectedRoute";
 import UserProfile from "./Page/UserProfile/UserProfile";
 import PostDetails from "./Page/PostDetails/PostDetails";
+import { createBrowserRouter, RouterProvider } from "react-router";
+import PublicRoute from "./Components/PublicRoute/PublicRoute";
 
+/* Nested Routes to make the side bar in many pages */
+/*Open close tag ===> parent route */
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: (
+      <ProtectedRoute>
+        {" "}
+        <Layout />
+      </ProtectedRoute>
+    ),
+    children: [
+      /* Open close tag ===> child route
+         we mustn't write (/) in the path of children because it make an absolute path not children
+      */
+      {
+        index: true,
+        element: <Home />,
+      },
+      {
+        path: "notifications",
+        element: <Notifications />,
+      },
+      {
+        path: "settings",
+        element: <Settings />,
+      },
+      {
+        path: "profile/:id",
+        element: <UserProfile />,
+      },
+      {
+        path: "my-profile",
+        element: <Profile />,
+      },
+      {
+        path: "posts/postDetails/:id",
+        element: <PostDetails />,
+      },
+      {
+        path: "*",
+        element: (
+          <ProtectedRoute>
+            {" "}
+            <NotFound />
+          </ProtectedRoute>
+        ),
+      },
+    ],
+  },
+  {
+    path: "/login",
+    element: (
+      <PublicRoute>
+        <Login />
+      </PublicRoute>
+    ),
+  },
+  {
+    path: "/signup",
+    element: (
+      <PublicRoute>
+        <Signup />
+      </PublicRoute>
+    ),
+  },
+]);
 function App() {
   return (
     <>
       <UserProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Nested Routes to make the side bar in many pages */}
+        <RouterProvider router={router} />
 
-            {/*Open close tag ===> parent route */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }>
-              {/* Open close tag ===> child route 
-            we mustn't write (/) in the path of children because it make an absolute path not children
-            */}
-              <Route
-                index
-                element={
-                  <ProtectedRoute>
-                    <Home />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="notifications"
-                element={
-                  <ProtectedRoute>
-                    <Notifications />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="settings"
-                element={
-                  <ProtectedRoute>
-                    <Settings />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="profile/:id"
-                element={
-                  <ProtectedRoute>
-                    <UserProfile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="my-profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="posts/:id"
-                element={
-                  <ProtectedRoute>
-                    <PostDetails />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="*"
-                element={
-                  <ProtectedRoute>
-                    <NotFound />
-                  </ProtectedRoute>
-                }
-              />
-            </Route>
-
-            <Route path="/signup" element={<Signup />} />
-            <Route path="/login" element={<Login />} />
-          </Routes>
-        </BrowserRouter>
         <Toaster
           position="top-right"
           toastOptions={{

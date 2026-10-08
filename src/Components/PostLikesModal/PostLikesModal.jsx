@@ -5,7 +5,7 @@ import { Link } from "react-router";
 import axios from "axios";
 
 export default function PostLikesModal({ post, setIsLikeModalOpen }) {
-  const { token } = useContext(UserContext);
+  const { token, userInfo } = useContext(UserContext);
   const [postLikes, setPostLikes] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   async function getPostLikes() {
@@ -114,7 +114,11 @@ export default function PostLikesModal({ post, setIsLikeModalOpen }) {
               {postLikes.map((user) => (
                 <Link
                   key={user._id}
-                  to={`/profile/${user._id}`}
+                  to={
+                    (user._id ?? user.id) === (userInfo?._id ?? userInfo?.id)
+                      ? "/my-profile"
+                      : `/profile/${user._id ?? user.id}`
+                  }
                   className="group flex items-center gap-3 rounded-xl px-2.5 py-3 transition-colors duration-200 hover:bg-[#f8f8f7] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#16161a] sm:px-3">
                   {user.photo ? (
                     <img loading="lazy"

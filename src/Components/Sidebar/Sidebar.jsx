@@ -82,7 +82,7 @@ export default function Sidebar() {
 
           <li className="relative group">
             <NavLink
-              to={"/profile"}
+              to={"/my-profile"}
               className={({ isActive }) =>
                 ` linkStyle ${
                   isActive
@@ -130,7 +130,7 @@ export default function Sidebar() {
 
       {/* Footer: avatar + logout */}
       <div className="flex flex-col space-y-3 border-t border-gray-200 pt-4">
-        <NavLink to={"/profile"} className="flex items-center justify-center lg:justify-start space-x-0 lg:space-x-3 px-0 lg:px-2 py-1">
+        <NavLink to={"/my-profile"} className="flex items-center justify-center lg:justify-start space-x-0 lg:space-x-3 px-0 lg:px-2 py-1">
           <div className="w-8 h-8 rounded-full bg-[#eeeeec] border border-[#16161a]/10 flex items-center justify-center text-xs font-semibold text-[#16161a] shrink-0 overflow-hidden">
             <img loading="lazy" src={userInfo.photo} alt={userInfo.name} className="w-full" />
           </div>
