@@ -5,10 +5,10 @@ import { ArrowLeft, MessageCircle, RefreshCw, Heart } from "lucide-react";
 import PostCard from "../../Components/PostCard/PostCard";
 import PostSkeleton from "../../Components/PostSkelleton/PostSkelleton";
 import { UserContext } from "../../Components/Context/use.context";
+import CreateComment from "../../Components/CreateComment/CreateComment";
 
 export default function PostDetails() {
   const { id } = useParams();
-  console.log(id);
 
   const navigate = useNavigate();
   const { token, userInfo } = useContext(UserContext);
@@ -65,15 +65,52 @@ export default function PostDetails() {
     }
   }
   // getAllCommentsFunction
-  async function getAllComments() {
+  async function getAllComments(refreshTopPage = false) {
     try {
       const { data } = await axios.request({
-        url: `https://route-posts.routemisr.com/posts/${id}/comments?page=${currentPage}&limit=5`,
+        url: `https://route-posts.routemisr.com/posts/${id}/comments?page=${refreshTopPage ? 1 : currentPage}&limit=5`,
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (data.success) {
-        setAllComments((prev) => [...prev, ...data.data.comments]);
+        const fetchedComments = data.data.comments ?? [];
+        if (refreshTopPage) {
+          setAllComments((prev) => {
+            const firstPageIds = new Set(
+              fetchedComments.map((comment) => comment._id ?? comment.id),
+            );
+            const olderComments = prev
+              .slice(Math.max(0, fetchedComments.length - 1))
+              .filter(
+                (comment) =>
+                  !firstPageIds.has(comment._id ?? comment.id),
+              );
+            const seen = new Set();
+            return [...fetchedComments, ...olderComments]
+              .filter((comment) => {
+                const commentId = comment._id ?? comment.id;
+                if (seen.has(commentId)) return false;
+                seen.add(commentId);
+                return true;
+              })
+              .slice(0, Math.max(prev.length, currentPage * 5));
+          });
+        } else {
+          setAllComments((prev) => {
+            const existingIds = new Set(
+              prev.map((comment) => comment._id ?? comment.id),
+            );
+            return [
+              ...prev,
+              ...fetchedComments.filter((comment) => {
+                const commentId = comment._id ?? comment.id;
+                if (existingIds.has(commentId)) return false;
+                existingIds.add(commentId);
+                return true;
+              }),
+            ];
+          });
+        }
       }
     } catch (err) {
       console.log({ err });
@@ -86,7 +123,7 @@ export default function PostDetails() {
     getAllComments();
   }, [id, currentPage]);
   return (
-    <div className=" w-full md:w-[calc(100%-0.3rem)] xl:w-[calc(100%-8rem)] mx-auto pt-0 mt-6 lg:mt-12 p-2 lg:p-6">
+    <div className=" w-full md:w-[calc(100%-0.3rem)] xl:w-[calc(100%-5rem)] mx-auto pt-0 mt-6 lg:mt-12 p-2 lg:p-6">
       {/* Back navigation */}
       <div className="mb-4 sm:px-0">
         <button
@@ -152,37 +189,48 @@ export default function PostDetails() {
               </h2>
 
               {(post.commentsCount ?? 0) === 0 ? (
-                <div className="flex flex-col items-center justify-center text-center py-8">
-                  <div className="mb-2.5 flex size-10 items-center justify-center rounded-full bg-[#fafaf9] border border-[#e8e8e6]">
-                    <MessageCircle
-                      className="size-[18px] text-[#929298]"
-                      aria-hidden="true"
-                    />
+                <>
+                  <div className="flex flex-col items-center justify-center text-center py-8">
+                    <div className="mb-2.5 flex size-10 items-center justify-center rounded-full bg-[#fafaf9] border border-[#e8e8e6]">
+                      <MessageCircle
+                        className="size-[18px] text-[#929298]"
+                        aria-hidden="true"
+                      />
+                    </div>
+                    <p className="text-xs font-medium text-[#16161a] sm:text-sm">
+                      No comments yet
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-[#929298] sm:text-xs">
+                      Be the first to share what you think.
+                    </p>
                   </div>
-                  <p className="text-xs font-medium text-[#16161a] sm:text-sm">
-                    No comments yet
-                  </p>
-                  <p className="mt-0.5 text-[11px] text-[#929298] sm:text-xs">
-                    Be the first to share what you think.
-                  </p>
-                </div>
+                  <CreateComment
+                    id={id}
+                    getPost={getPost}
+                    getAllComments={getAllComments}
+                  />
+                </>
               ) : post.commentsCount > 0 ? (
                 <div className="mt-4 flex w-full min-w-0 flex-col divide-y divide-[#eeeeec] border-t border-[#eeeeec]">
                   {allComments.map((comment) => (
                     <div
                       key={comment._id}
                       className="flex w-full min-w-0 items-start gap-2.5 py-3">
-                      <Link to={profilePath(comment.commentCreator)} className="shrink-0">
-                      <img
-                        loading="lazy"
-                        src={comment.commentCreator.photo}
-                        alt={`${comment.commentCreator.name}'s profile`}
-                        className="size-7 shrink-0 rounded-full bg-[#f2f2f1] object-cover sm:size-8"
-                      />
+                      <Link
+                        to={profilePath(comment.commentCreator)}
+                        className="shrink-0">
+                        <img
+                          loading="lazy"
+                          src={comment.commentCreator.photo}
+                          alt={`${comment.commentCreator.name}'s profile`}
+                          className="size-7 shrink-0 rounded-full bg-[#f2f2f1] object-cover sm:size-8"
+                        />
                       </Link>
                       <div className="min-w-0 flex-1">
                         <div className="inline-block w-full min-w-0 max-w-full rounded-2xl bg-[#f2f2f1] px-3.5 py-2.5">
-                          <Link to={profilePath(comment.commentCreator)} className="text-xs font-semibold text-[#16161a] hover:underline sm:text-[13px]">
+                          <Link
+                            to={profilePath(comment.commentCreator)}
+                            className="text-xs font-semibold text-[#16161a] hover:underline sm:text-[13px]">
                             {comment.commentCreator.name}
                           </Link>
 
@@ -251,31 +299,48 @@ export default function PostDetails() {
                               </button>
                             )}
 
-                            {appeartReplies &&
-                              allReplieComments?.map((reply) => (
-                                <div className="relative ml-2 mt-3 pl-3 sm:ml-3 sm:pl-4">
-                                  <span
-                                    aria-hidden="true"
-                                    className="absolute -left-0.5 -top-3 h-6 w-4 rounded-bl-[10px] border-b border-l border-[#e8e8e6] sm:w-5"
-                                  />
-
-                                  <div className="flex min-w-0 items-start gap-2">
-                                    <Link to={profilePath(reply.commentCreator)} className="shrink-0">
-                                    <img
-                                      loading="lazy"
-                                      src={reply.commentCreator.photo}
-                                      alt=""
-                                      className="size-6 shrink-0 rounded-full bg-[#f2f2f1] object-cover sm:size-7"
+                            {appeartReplies && (
+                              <div className="relative ml-2 mt-3 space-y-3 pl-3 sm:ml-3 sm:pl-4">
+                                <span
+                                  aria-hidden="true"
+                                  className="absolute left-0 top-3 bottom-3 border-l border-[#e8e8e6]"
+                                />
+                                {allReplieComments?.map((reply) => (
+                                  <div
+                                    key={reply._id ?? reply.id}
+                                    className="relative">
+                                    <span
+                                      aria-hidden="true"
+                                      className="absolute -left-3 top-0 h-3 w-3 rounded-bl-xl border-b border-l border-[#e8e8e6] sm:-left-4"
                                     />
+
+                                    <div className="flex min-w-0 items-start gap-2">
+                                    <Link
+                                      to={profilePath(reply.commentCreator)}
+                                      className="shrink-0">
+                                      <img
+                                        loading="lazy"
+                                        src={reply.commentCreator.photo}
+                                        alt=""
+                                        className="size-6 shrink-0 rounded-full bg-[#f2f2f1] object-cover sm:size-7"
+                                      />
                                     </Link>
 
                                     <div className="min-w-0 flex-1">
                                       <div className="inline-block max-w-full rounded-2xl rounded-tl-md border border-[#eeeeec] bg-white px-3 py-2 shadow-[0_1px_2px_rgba(15,15,16,0.03)]">
                                         <div className="flex flex-wrap items-baseline gap-x-1.5">
-                                          <Link to={profilePath(reply.commentCreator)} className="text-xs font-semibold text-[#16161a] hover:underline">
+                                          <Link
+                                            to={profilePath(
+                                              reply.commentCreator,
+                                            )}
+                                            className="text-xs font-semibold text-[#16161a] hover:underline">
                                             {reply.commentCreator.name}
                                           </Link>
-                                          <Link to={profilePath(reply.commentCreator)} className="text-[11px] text-[#929298] hover:underline">
+                                          <Link
+                                            to={profilePath(
+                                              reply.commentCreator,
+                                            )}
+                                            className="text-[11px] text-[#929298] hover:underline">
                                             @{reply.commentCreator.username}
                                           </Link>
                                         </div>
@@ -283,7 +348,7 @@ export default function PostDetails() {
                                         {reply.content && (
                                           <p className="mt-0.5 whitespace-pre-wrap break-words text-xs leading-5 text-[#424249] sm:text-[13px]">
                                             {reply.content}
-                                          </p>
+                                          </p>  
                                         )}
                                       </div>
 
@@ -302,17 +367,19 @@ export default function PostDetails() {
                                       </div>
                                     </div>
                                   </div>
-                                  {allReplieComments > 5 && (
-                                    <button
-                                      className="mx-auto block rounded-xl px-3 py-2 text-sm cursor-pointer bg-gray-200 text-[#16161a]"
-                                      onClick={() => {
-                                        setCurrentReplyPage((page) => page + 1);
-                                      }}>
-                                      Show more{" "}
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
+                                    {allReplieComments > 5 && (
+                                      <button
+                                        className="mx-auto block rounded-xl px-3 py-2 text-sm cursor-pointer bg-gray-200 text-[#16161a]"
+                                        onClick={() => {
+                                          setCurrentReplyPage((page) => page + 1);
+                                        }}>
+                                        Show more{" "}
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </>
                         )}
                       </div>
@@ -331,11 +398,23 @@ export default function PostDetails() {
                         </button>
                       </div>
                     )}
+                  <CreateComment
+                    id={id}
+                    getAllComments={getAllComments}
+                    getPost={getPost}
+                  />
                 </div>
               ) : (
-                <p className="py-6 text-center text-xs text-[#707078]">
-                  {post.commentsCount} comments on this post.
-                </p>
+                <>
+                  <p className="py-6 text-center text-xs text-[#707078]">
+                    {post.commentsCount} comments on this post.
+                  </p>
+                  <CreateComment
+                    id={id}
+                    getAllComments={getAllComments}
+                    getPost={getPost}
+                  />
+                </>
               )}
 
               {/* Static comment thread — UI demo only, not from the API */}

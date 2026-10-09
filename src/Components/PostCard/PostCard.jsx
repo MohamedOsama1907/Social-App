@@ -293,51 +293,55 @@ export default function PostCard({
             </div>
           )}
         </Link>
-          {post.sharedPost && (
-            <div className="mx-4 mb-5 overflow-hidden rounded-xl border border-[#e8e8e6] bg-[#fafaf9] sm:mx-6 lg:mx-7">
-              <div className="flex items-center gap-2.5 px-3.5 py-3 sm:px-4">
-                <Link to={profilePath(post.sharedPost.user)} className="shrink-0">
+        {post.sharedPost && (
+          <div className="mx-4 mb-5 overflow-hidden rounded-xl border border-[#e8e8e6] bg-[#fafaf9] sm:mx-6 lg:mx-7">
+            <div className="flex items-center gap-2.5 px-3.5 py-3 sm:px-4">
+              <Link to={profilePath(post.sharedPost.user)} className="shrink-0">
                 <img
                   loading="lazy"
                   src={post.sharedPost.user.photo}
                   alt={`${post.sharedPost.user.name}'s profile`}
                   className="size-8 shrink-0 rounded-full object-cover bg-[#f2f2f1]"
                 />
-                </Link>
-                <div className="min-w-0">
-                  <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
-                    <Link to={profilePath(post.sharedPost.user)} className="truncate text-xs font-semibold text-[#16161a] hover:underline sm:text-sm">
-                      {post.sharedPost.user.name}
-                    </Link>
-                    <Link to={profilePath(post.sharedPost.user)} className="truncate text-xs text-[#707078] hover:underline">
-                      @{post.sharedPost.user.username}
-                    </Link>
-                  </div>
-                  <div className="flex items-center gap-1 text-[11px] text-[#929298] sm:text-xs">
-                    <span>{formatPostDate(post.sharedPost.createdAt)}</span>
-                    <span aria-hidden="true">·</span>
-                    <Globe2 className="size-3" aria-hidden="true" />
-                    <span>{post.sharedPost.privacy}</span>
-                  </div>
+              </Link>
+              <div className="min-w-0">
+                <div className="flex min-w-0 flex-wrap items-baseline gap-x-1.5">
+                  <Link
+                    to={profilePath(post.sharedPost.user)}
+                    className="truncate text-xs font-semibold text-[#16161a] hover:underline sm:text-sm">
+                    {post.sharedPost.user.name}
+                  </Link>
+                  <Link
+                    to={profilePath(post.sharedPost.user)}
+                    className="truncate text-xs text-[#707078] hover:underline">
+                    @{post.sharedPost.user.username}
+                  </Link>
+                </div>
+                <div className="flex items-center gap-1 text-[11px] text-[#929298] sm:text-xs">
+                  <span>{formatPostDate(post.sharedPost.createdAt)}</span>
+                  <span aria-hidden="true">·</span>
+                  <Globe2 className="size-3" aria-hidden="true" />
+                  <span>{post.sharedPost.privacy}</span>
                 </div>
               </div>
-
-              {post.sharedPost.body && (
-                <p className="px-3.5 pb-3 text-xs leading-5 text-[#16161a] sm:px-4 sm:text-sm">
-                  {post.sharedPost.body.trim()}
-                </p>
-              )}
-
-              {post.sharedPost.image && (
-                <img
-                  loading="lazy"
-                  src={post.sharedPost.image}
-                  alt={`Shared post by ${post.sharedPost.user.name}`}
-                  className="block max-h-105 w-full object-contain"
-                />
-              )}
             </div>
-          )}
+
+            {post.sharedPost.body && (
+              <p className="px-3.5 pb-3 text-xs leading-5 text-[#16161a] sm:px-4 sm:text-sm">
+                {post.sharedPost.body.trim()}
+              </p>
+            )}
+
+            {post.sharedPost.image && (
+              <img
+                loading="lazy"
+                src={post.sharedPost.image}
+                alt={`Shared post by ${post.sharedPost.user.name}`}
+                className="block max-h-105 w-full object-contain"
+              />
+            )}
+          </div>
+        )}
         <footer className="px-4 py-4 sm:px-6 lg:px-7">
           <div className="flex items-center justify-between border-b border-[#eeeeec] pb-3 text-xs text-[#707078] sm:text-sm">
             <span
@@ -350,7 +354,9 @@ export default function PostCard({
             <div className="flex items-center gap-3">
               <Link to={`/posts/postDetails/${post._id}`}>
                 {" "}
-                <span>{post.commentsCount} comments</span>
+                <Link to={`/posts/postDetails/${post._id}`}>
+                  <span>{post.commentsCount} comments</span>
+                </Link>
               </Link>
               <span>{post.sharesCount} shares</span>
             </div>
@@ -369,11 +375,15 @@ export default function PostCard({
               />
               <span>Like</span>
             </button>
+
             <button
               type="button"
               className="flex cursor-pointer items-center justify-center gap-2 rounded-lg py-2 transition-colors duration-150 hover:text-[#16161a]">
               <MessageCircle className="size-4" aria-hidden="true" />
-              <span>Comment</span>
+
+              <Link to={`/posts/postDetails/${post._id}`}>
+                <span>Comment</span>
+              s</Link>
             </button>
             <button
               onClick={() => {
@@ -400,21 +410,27 @@ export default function PostCard({
           {post.topComment && showTopComment && (
             <div className="mt-3 rounded-2xl border border-[#eeeeec] bg-[#fafaf9] p-3 sm:p-3.5">
               <div className="flex items-start gap-2.5">
-                <Link to={profilePath(post.topComment.commentCreator)} className="shrink-0">
-                <img
-                  loading="lazy"
-                  src={post.topComment.commentCreator.photo}
-                  alt=""
-                  className="size-8 shrink-0 rounded-full bg-[#f2f2f1] object-cover"
-                />
+                <Link
+                  to={profilePath(post.topComment.commentCreator)}
+                  className="shrink-0">
+                  <img
+                    loading="lazy"
+                    src={post.topComment.commentCreator.photo}
+                    alt=""
+                    className="size-8 shrink-0 rounded-full bg-[#f2f2f1] object-cover"
+                  />
                 </Link>
 
                 <div className="min-w-0 flex-1 rounded-xl bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,15,16,0.04)] ring-1 ring-[#f0f0ee]">
                   <div className="flex flex-wrap items-baseline gap-x-1.5">
-                    <Link to={profilePath(post.topComment.commentCreator)} className="text-xs font-semibold text-[#16161a] hover:underline">
+                    <Link
+                      to={profilePath(post.topComment.commentCreator)}
+                      className="text-xs font-semibold text-[#16161a] hover:underline">
                       {post.topComment.commentCreator.name}
                     </Link>
-                    <Link to={profilePath(post.topComment.commentCreator)} className="text-[11px] text-[#929298] hover:underline">
+                    <Link
+                      to={profilePath(post.topComment.commentCreator)}
+                      className="text-[11px] text-[#929298] hover:underline">
                       @{post.topComment.commentCreator.username}
                     </Link>
                   </div>
