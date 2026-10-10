@@ -64,6 +64,38 @@ export default function PostCard({
       setIsActionsMenuOpen(false);
     }
   }
+  async function handleCopyPostLink() {
+    const postId = post._id ?? post.id;
+    if (!postId) return;
+
+    const postUrl = `${window.location.origin}/posts/postDetails/${encodeURIComponent(postId)}`;
+    let temporaryInput;
+
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(postUrl);
+      } else {
+        temporaryInput = document.createElement("textarea");
+        temporaryInput.value = postUrl;
+        temporaryInput.setAttribute("readonly", "");
+        temporaryInput.style.position = "fixed";
+        temporaryInput.style.opacity = "0";
+        document.body.appendChild(temporaryInput);
+        temporaryInput.select();
+
+        if (!document.execCommand("copy")) {
+          throw new Error("Clipboard access is unavailable.");
+        }
+      }
+
+      toast.success("Post link copied to clipboard");
+    } catch {
+      toast.warning("Could not copy the post link. Please copy the page URL.");
+    } finally {
+      temporaryInput?.remove();
+      setIsActionsMenuOpen(false);
+    }
+  }
   async function requestPostAction(action, changes) {
     try {
       const config = {
@@ -280,7 +312,7 @@ export default function PostCard({
                 <button
                   type="button"
                   role="menuitem"
-                  onClick={() => setIsActionsMenuOpen(false)}
+                  onClick={handleCopyPostLink}
                   className="cursor-pointer flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-[#29292d] transition-colors hover:bg-[#f7f7f6]">
                   <Copy className="size-4 text-[#707078]" aria-hidden="true" />
                   <span>Copy link</span>
