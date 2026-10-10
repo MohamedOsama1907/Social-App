@@ -13,6 +13,8 @@ import UserProfile from "./Page/UserProfile/UserProfile";
 import PostDetails from "./Page/PostDetails/PostDetails";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import PublicRoute from "./Components/PublicRoute/PublicRoute";
+import { Detector } from "react-detect-offline";
+import OfflinePage from "./Page/OfflinePage/OfflinePage";
 
 /* Nested Routes to make the side bar in many pages */
 /*Open close tag ===> parent route */
@@ -85,7 +87,11 @@ function App() {
   return (
     <>
       <UserProvider>
-        <RouterProvider router={router} />
+        <Detector
+          render={({ online }) =>
+            online ? <RouterProvider router={router} /> : <OfflinePage />
+          }
+        />
 
         <Toaster
           position="top-right"

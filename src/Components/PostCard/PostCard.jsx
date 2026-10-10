@@ -69,30 +69,15 @@ export default function PostCard({
     if (!postId) return;
 
     const postUrl = `${window.location.origin}/posts/postDetails/${encodeURIComponent(postId)}`;
-    let temporaryInput;
 
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(postUrl);
-      } else {
-        temporaryInput = document.createElement("textarea");
-        temporaryInput.value = postUrl;
-        temporaryInput.setAttribute("readonly", "");
-        temporaryInput.style.position = "fixed";
-        temporaryInput.style.opacity = "0";
-        document.body.appendChild(temporaryInput);
-        temporaryInput.select();
-
-        if (!document.execCommand("copy")) {
-          throw new Error("Clipboard access is unavailable.");
-        }
+        toast.success("Post link copied to clipboard");
       }
-
-      toast.success("Post link copied to clipboard");
     } catch {
       toast.warning("Could not copy the post link. Please copy the page URL.");
     } finally {
-      temporaryInput?.remove();
       setIsActionsMenuOpen(false);
     }
   }
@@ -161,7 +146,9 @@ export default function PostCard({
     const data = await getUserProfile(token, postOwnerId);
     if (data.success) {
       setIsFollowing(
-        Boolean(data.data.isFollowing ?? isUserFollowing(userInfo, postOwnerId)),
+        Boolean(
+          data.data.isFollowing ?? isUserFollowing(userInfo, postOwnerId),
+        ),
       );
     } else {
       setIsFollowing(isUserFollowing(userInfo, postOwnerId));
@@ -388,7 +375,9 @@ export default function PostCard({
                   </Link>
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-[#929298] sm:text-xs">
-                  <span>{formatRelativePostTime(post.sharedPost.createdAt)}</span>
+                  <span>
+                    {formatRelativePostTime(post.sharedPost.createdAt)}
+                  </span>
                   <span aria-hidden="true">·</span>
                   <Globe2 className="size-3" aria-hidden="true" />
                   <span>{post.sharedPost.privacy}</span>
@@ -430,7 +419,7 @@ export default function PostCard({
             </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-1 pt-2 text-xs font-medium text-[#707078] sm:text-sm">
+          <div className="grid grid-cols-2 gap-1 pt-2 text-xs font-medium text-[#707078] sm:grid-cols-4 sm:gap-1 sm:text-sm">
             <button
               onClick={() => {
                 handleLike();
@@ -441,7 +430,7 @@ export default function PostCard({
                 className={`size-4 ${post.likes.includes(userInfo?._id) ? "fill-current text-[#F33E58]" : ""}`}
                 aria-hidden="true"
               />
-              <span>Like</span>
+              <span className="whitespace-nowrap">Like</span>
             </button>
 
             <button
@@ -450,7 +439,7 @@ export default function PostCard({
               <MessageCircle className="size-4" aria-hidden="true" />
 
               <Link to={`/posts/postDetails/${post._id}`}>
-                <span>Comment</span>s
+                <span className="whitespace-nowrap">Comments</span>
               </Link>
             </button>
             <button
@@ -468,7 +457,7 @@ export default function PostCard({
               }
               className={`flex items-center justify-center gap-2 rounded-lg py-2 transition-colors duration-150 ${cannotSharePost ? "cursor-not-allowed text-[#929298]" : "cursor-pointer text-[#707078] hover:text-[#16161a]"}`}>
               <Repeat2 className={`size-4`} aria-hidden="true" />
-              <span>
+              <span className="whitespace-nowrap">
                 {isOwnPost ? "Your post" : post.isShare ? "Shared" : "Share"}
               </span>
             </button>
@@ -482,7 +471,9 @@ export default function PostCard({
                 className={`size-4 ${post.bookmarked ? "fill-current text-[#16161a]" : ""}`}
                 aria-hidden="true"
               />
-              <span>{post.bookmarked ? "Saved" : "Save"}</span>
+              <span className="whitespace-nowrap">
+                {post.bookmarked ? "Saved" : "Save"}
+              </span>
             </button>
           </div>
           {post.topComment && showTopComment && (
