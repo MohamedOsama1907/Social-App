@@ -12,16 +12,19 @@ import {
 } from "lucide-react";
 import * as yup from "yup";
 import { UserContext } from "../Context/use.context";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+
+const MAX_TEXTAREA_HEIGHT = 180;
 
 export default function CreatePostForm({ onPostCreated }) {
   const { token } = useContext(UserContext);
   const [imagePreview, setImagePreview] = useState(null);
+  const textareaRef = useRef(null);
   const { userInfo } = useContext(UserContext);
   const schema = yup.object({
-    body: yup.string().min(20, "body must be at least 20 characters"),
+    body: yup.string().min(3, "body must be at least 3 characters"),
     image: yup
       .mixed()
       .nullable()
@@ -83,7 +86,7 @@ export default function CreatePostForm({ onPostCreated }) {
         if (data.success) {
           toast.success(data.message);
           // to appear the created post
-          await onPostCreated?.();
+          await onPostCreated?.(true);
           /* 
           if (onPostCreated) {
             await onPostCreated();
@@ -99,6 +102,18 @@ export default function CreatePostForm({ onPostCreated }) {
       }
     },
   });
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    const nextHeight = Math.min(textarea.scrollHeight, MAX_TEXTAREA_HEIGHT);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY =
+      textarea.scrollHeight > MAX_TEXTAREA_HEIGHT ? "auto" : "hidden";
+  }, [values.body]);
+
   return (
     <div className="w-full mx-auto mt-4 px-0 py-2 sm:py-3">
       <article className="mx-auto  w-9/10  overflow-hidden rounded-2xl border border-[#e8e8e6] bg-white shadow-[0_8px_24px_rgba(22,22,26,0.06)]">
@@ -119,6 +134,7 @@ export default function CreatePostForm({ onPostCreated }) {
 
             <div className="min-w-0 flex-1">
               <textarea
+                ref={textareaRef}
                 id="postBody"
                 name="body"
                 rows={3}
@@ -170,7 +186,6 @@ export default function CreatePostForm({ onPostCreated }) {
                   if (!image) return;
                   const imageURl = URL.createObjectURL(image);
                   setImagePreview(imageURl);
-                  // console.log(image);
                 }}
               />
               <div className="mb-2.5 flex size-10 items-center justify-center rounded-full bg-[#f2f2f1] sm:size-11">

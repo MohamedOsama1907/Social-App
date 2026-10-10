@@ -47,7 +47,6 @@ export default function SharePostModal({
           }
         } catch (error) {
           if (error.response.data.message === "Post already shared") {
-            toast.error("Post already shared");
             return;
           }
         }

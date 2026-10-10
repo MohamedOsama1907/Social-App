@@ -10,7 +10,6 @@ import { UserContext } from "../Context/use.context";
 import { useContext, useEffect, useState } from "react";
 import axios from "axios";
 import { followUser } from "../UserServices/UserServices";
-import { toast } from "sonner";
 import { Link } from "react-router";
 
 export default function FollowingSuggestions() {
@@ -63,9 +62,6 @@ export default function FollowingSuggestions() {
         }));
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.message || "Could not update follow status.",
-      );
     }
   }
   function handleDismissSuggestion(personId) {

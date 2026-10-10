@@ -5,8 +5,8 @@ import { useContext } from "react";
 import { UserContext } from "../Context/use.context";
 
 export default function Sidebar() {
-  const { setToken, setUserInfo } = useContext(UserContext);
-  const { userInfo } = useContext(UserContext);
+  const { setToken, setUserInfo, userInfo, unreadNotificationCount } =
+    useContext(UserContext);
 
   function logOut() {
     setToken(null);
@@ -59,6 +59,11 @@ export default function Sidebar() {
 
           <li className="relative group">
             <NavLink
+              aria-label={
+                unreadNotificationCount > 0
+                  ? `Notifications, ${unreadNotificationCount} unread`
+                  : "Notifications"
+              }
               to={"/notifications"}
               className={({ isActive }) =>
                 ` linkStyle ${
@@ -72,7 +77,16 @@ export default function Sidebar() {
                   {isActive && (
                     <span className="absolute -left-4 top-1/2 -translate-y-1/2 w-0.75 h-4.5 rounded-r bg-[#16161a]" />
                   )}
-                  <Bell size={20} className="shrink-0" />
+                  <span className="relative inline-flex">
+                    <Bell size={20} className="shrink-0" />
+                    {unreadNotificationCount > 0 && (
+                      <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-[#c0393f] px-1 text-center text-[9px] font-semibold leading-4 text-white">
+                        {unreadNotificationCount > 99
+                          ? "99+"
+                          : unreadNotificationCount}
+                      </span>
+                    )}
+                  </span>
                   <span className="hidden lg:inline">Notifications</span>
                 </>
               )}

@@ -16,10 +16,10 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
 
-  async function getPosts() {
+  async function getPosts(refreshFirstPage = false) {
     try {
       const config = {
-        url: `https://route-posts.routemisr.com/posts?limit=20&page=${currentPage}`,
+        url: `https://route-posts.routemisr.com/posts?limit=20&page=${refreshFirstPage ? 1 : currentPage}`,
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -27,8 +27,19 @@ export default function Home() {
       };
       const { data } = await axios.request(config);
       if (data.success) {
-        setAllPosts((prev) => [...prev, ...data.data.posts]);
-        setIsInitialLoading(true);
+        const fetchedPosts = data.data.posts ?? [];
+        setAllPosts((previous) => {
+          const seen = new Set();
+          const mergedPosts = refreshFirstPage
+            ? [...fetchedPosts, ...previous]
+            : [...previous, ...fetchedPosts];
+          return mergedPosts.filter((post) => {
+            const postId = post._id ?? post.id;
+            if (seen.has(postId)) return false;
+            seen.add(postId);
+            return true;
+          });
+        });
       }
     } catch (error) {
       console.log(error);

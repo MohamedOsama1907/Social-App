@@ -13,6 +13,7 @@ export default function UserProvider({ children }) {
   const [userInfoLoading, setUserInfoLoading] = useState(
     Boolean(sessionStorage.getItem("token")),
   );
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
   async function getUserInfo() {
     if (!token) {
@@ -41,8 +42,36 @@ export default function UserProvider({ children }) {
       setUserInfoLoading(false);
     }
   }
+
+  async function refreshUnreadNotificationCount() {
+    if (!token) {
+      setUnreadNotificationCount(0);
+      return;
+    }
+
+    try {
+      const { data } = await axios.request({
+        url: "https://route-posts.routemisr.com/notifications/unread-count",
+        headers: { Authorization: `Bearer ${token}` },
+        method: "GET",
+      });
+      if (data?.success) {
+        const unreadCount = data.data?.unreadCount;
+        if (Number.isFinite(unreadCount)) {
+          setUnreadNotificationCount(Math.max(0, unreadCount));
+        }
+      }
+    } catch (error) {
+      console.log({ error });
+    }
+  }
+
   useEffect(() => {
     getUserInfo();
+  }, [token]);
+
+  useEffect(() => {
+    refreshUnreadNotificationCount();
   }, [token]);
 
   return (
@@ -53,6 +82,9 @@ export default function UserProvider({ children }) {
         userInfo,
         setUserInfo,
         userInfoLoading,
+        unreadNotificationCount,
+        setUnreadNotificationCount,
+        refreshUnreadNotificationCount,
       }}>
       {children}
     </UserContext.Provider>

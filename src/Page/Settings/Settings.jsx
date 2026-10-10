@@ -63,7 +63,6 @@ export default function SettingsPage({}) {
     validationSchema: photoSchema,
     onSubmit: async (values, { resetForm }) => {
       if (!values.image) {
-        toast.error("Choose a photo before saving.");
         return;
       }
 
@@ -85,10 +84,6 @@ export default function SettingsPage({}) {
         }
       } catch (error) {
         console.error(error);
-        toast?.error?.(
-          error?.response?.data?.message ||
-            "Could not update your profile photo.",
-        );
       }
     },
   });
@@ -142,7 +137,6 @@ export default function SettingsPage({}) {
             error?.response?.data?.message === "incorrect email or password"
           ) {
             setIsCurrentPassTrue(true);
-            toast?.error?.(error?.response?.data?.message);
           }
           console.error({ error });
         }
@@ -368,7 +362,7 @@ export default function SettingsPage({}) {
                           type={showNewPassword ? "text" : "password"}
                           autoComplete="new-password"
                           required
-                          className="h-11 w-full rounded-xl border border-[#b8b8c0] bg-white px-3.5 text-[14px] outline-none transition hover:border-[#92929a] focus:border-[#777780] focus:ring-4 focus:ring-black/[0.035]"
+                          className="h-11 w-full rounded-xl border border-[#b8b8c0] bg-white px-3.5 pr-11 text-[14px] outline-none transition hover:border-[#92929a] focus:border-[#777780] focus:ring-4 focus:ring-black/[0.035]"
                         />
                         <button
                           type="button"
@@ -409,7 +403,7 @@ export default function SettingsPage({}) {
                           type={showConfirmPassword ? "text" : "password"}
                           autoComplete="new-password"
                           required
-                          className="h-11 w-full rounded-xl border border-[#b8b8c0] bg-white px-3.5 text-[14px] outline-none transition hover:border-[#92929a] focus:border-[#777780] focus:ring-4 focus:ring-black/[0.035]"
+                          className="h-11 w-full rounded-xl border border-[#b8b8c0] bg-white px-3.5 pr-11 text-[14px] outline-none transition hover:border-[#92929a] focus:border-[#777780] focus:ring-4 focus:ring-black/[0.035]"
                         />
                         <button
                           type="button"
@@ -507,9 +501,9 @@ export default function SettingsPage({}) {
                     aria-checked={checked}
                     aria-label={label}
                     onClick={() => setChecked((value) => !value)}
-                    className={`relative h-[22px] w-[40px] shrink-0 cursor-pointer rounded-full transition-colors focus:outline-none focus:ring-4 focus:ring-black/5 ${checked ? "bg-[#16161a]" : "bg-[#dedee3]"}`}>
+                    className={`relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-4 focus-visible:ring-black/10 ${checked ? "bg-[#16161a]" : "bg-[#d4d4d8]"}`}>
                     <span
-                      className={`absolute top-[3px] size-4 rounded-full bg-white shadow-sm transition-transform ${checked ? "translate-x-[21px]" : "translate-x-[3px]"}`}
+                      className={`absolute left-1 top-1 size-4 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform duration-200 ${checked ? "translate-x-5" : "translate-x-0"}`}
                     />
                   </button>
                 </div>

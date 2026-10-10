@@ -60,6 +60,29 @@ function UserRow({ user }) {
   );
 }
 
+async function getRelationshipUsers(token, relationships = []) {
+  const users = await Promise.all(
+    relationships.map(async (relationship) => {
+      if (
+        relationship &&
+        typeof relationship === "object" &&
+        (relationship.name || relationship.username)
+      ) {
+        return relationship;
+      }
+
+      const relationshipId =
+        relationship?._id ?? relationship?.id ?? relationship;
+      if (!relationshipId) return null;
+
+      const response = await getUserProfile(token, relationshipId);
+      return response?.data?.user ?? null;
+    }),
+  );
+
+  return users.filter(Boolean);
+}
+
 export default function Profile() {
   const [bookMarksPosts, setBookMarksPosts] = useState(null);
   const [myPosts, setMyPosts] = useState(null);
@@ -68,9 +91,10 @@ export default function Profile() {
   const [uploadModal, setUploadModal] = useState(false);
   const [followersUsers, setFollowersUsers] = useState([]);
   const [followingUsers, setFollowingUsers] = useState([]);
+  const [followersLoading, setFollowersLoading] = useState(true);
+  const [followingLoading, setFollowingLoading] = useState(true);
   const { token, userInfo, userInfoLoading, setUserInfo } =
     useContext(UserContext);
-  console.log(token);
   const userId = userInfo?.id ?? userInfo?._id;
   const {
     bookmarks,
@@ -109,35 +133,51 @@ export default function Profile() {
   }
   // get followers function
   useEffect(() => {
-    async function getFollowers() {
+    let isCurrent = true;
+    async function loadFollowers() {
+      setFollowersLoading(true);
       try {
-        const data = await Promise.all(
-          followers.map((id) => getUserProfile(token, id)),
-        );
-        setFollowersUsers(data.data.users);
-      } catch ({ error }) {
+        const users = await getRelationshipUsers(token, followers ?? []);
+        if (isCurrent) setFollowersUsers(users);
+      } catch (error) {
         console.log(error);
+        if (isCurrent) setFollowersUsers([]);
+      } finally {
+        if (isCurrent) setFollowersLoading(false);
       }
     }
 
-    if (followers?.length > 0) getFollowers();
-  }, [followers]);
+    if (token) loadFollowers();
+    else setFollowersLoading(false);
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [followers, token]);
 
   // get following function
   useEffect(() => {
-    async function getFollowing() {
+    let isCurrent = true;
+    async function loadFollowing() {
+      setFollowingLoading(true);
       try {
-        const data = await Promise.all(
-          following.map((id) => getUserProfile(token, id)),
-        );
-        setFollowingUsers(data.data.users);
-      } catch ({ error }) {
+        const users = await getRelationshipUsers(token, following ?? []);
+        if (isCurrent) setFollowingUsers(users);
+      } catch (error) {
         console.log(error);
+        if (isCurrent) setFollowingUsers([]);
+      } finally {
+        if (isCurrent) setFollowingLoading(false);
       }
     }
 
-    if (following?.length > 0) getFollowing();
-  }, [following]);
+    if (token) loadFollowing();
+    else setFollowingLoading(false);
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [following, token]);
 
   async function getMyPosts() {
     setMyPostsLoading(true);
@@ -152,7 +192,6 @@ export default function Profile() {
       const { data } = await axios.request(config);
       const posts = data.data.posts;
       setMyPosts(posts);
-      console.log(posts);
     } catch (error) {
       console.log(error);
     } finally {
@@ -207,9 +246,6 @@ export default function Profile() {
   useEffect(() => {
     if (token) getBookMarks();
   }, [token]);
-  console.log(myPosts);
-
-  console.log("followers:", userInfo.followers);
   const joinDate = createdAt
     ? new Date(createdAt).toLocaleDateString("en-US", {
         month: "long",
@@ -411,7 +447,7 @@ export default function Profile() {
               ))}
             {/* --- Followers --- */}
             {activeTab === "followers" &&
-              (userInfoLoading ? (
+              (followersLoading ? (
                 <div className="bg-white rounded-2xl border border-[#16161a]/8 divide-y divide-[#16161a]/6">
                   <UserRowSkeleton />
                   <UserRowSkeleton />
@@ -420,7 +456,10 @@ export default function Profile() {
               ) : followersUsers && followersUsers.length > 0 ? (
                 <ul className="bg-white rounded-2xl border border-[#16161a]/8 divide-y divide-[#16161a]/6 max-h-80 overflow-y-auto">
                   {followersUsers.map((follower) => (
-                    <UserRow key={follower} user={follower} />
+                    <UserRow
+                      key={follower._id ?? follower.id}
+                      user={follower}
+                    />
                   ))}
                 </ul>
               ) : (
@@ -439,7 +478,7 @@ export default function Profile() {
 
             {/* --- Following --- */}
             {activeTab === "following" &&
-              (userInfoLoading ? (
+              (followingLoading ? (
                 <div className="bg-white rounded-2xl border border-[#16161a]/8 divide-y divide-[#16161a]/6">
                   <UserRowSkeleton />
                   <UserRowSkeleton />

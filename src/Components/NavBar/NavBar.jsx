@@ -5,13 +5,15 @@ import logoImage from "../../assets/looogo.png";
 import { UserContext } from "../../Components/Context/use.context";
 
 export default function NavBar() {
-  const { setToken, userInfo } = useContext(UserContext);
+  const { setToken, userInfo, unreadNotificationCount } =
+    useContext(UserContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
   const navigate = useNavigate();
   function logOut() {
     setToken(null);
-    sessionStorage.removeItems("token");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("userInfo");
     navigate("/login");
   }
   useEffect(() => {
@@ -52,6 +54,11 @@ export default function NavBar() {
         <ul className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3 md:gap-5">
           <li className="relative group">
             <NavLink
+              aria-label={
+                unreadNotificationCount > 0
+                  ? `Notifications, ${unreadNotificationCount} unread`
+                  : "Notifications"
+              }
               onClick={() => {
                 window.scrollTo({
                   top: 0,
@@ -100,7 +107,16 @@ export default function NavBar() {
                   {isActive && (
                     <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-4 h-0.75 rounded-t bg-[#16161a]" />
                   )}
-                  <Bell size={22} className="shrink-0" />
+                  <span className="relative inline-flex">
+                    <Bell size={22} className="shrink-0" />
+                    {unreadNotificationCount > 0 && (
+                      <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-[#c0393f] px-1 text-center text-[9px] font-semibold leading-4 text-white">
+                        {unreadNotificationCount > 99
+                          ? "99+"
+                          : unreadNotificationCount}
+                      </span>
+                    )}
+                  </span>
                 </>
               )}
             </NavLink>

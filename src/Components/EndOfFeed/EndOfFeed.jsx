@@ -46,7 +46,7 @@ export default function EndOfFeed({ onKeepScrolling }) {
           Feed complete
         </p>
         <h2 className="mt-1.5 text-xl font-semibold tracking-tight text-[#24222d] sm:text-2xl">
-          You’re all caught up! <span aria-hidden="true">🎉</span>
+          You’re all caught up!
         </h2>
         <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-[#777482] sm:text-[15px]">
           Got a little more time to scroll?

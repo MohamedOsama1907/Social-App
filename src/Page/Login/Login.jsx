@@ -8,10 +8,12 @@ import { toast } from "sonner";
 import { useContext, useState } from "react";
 import { UserContext } from "../../Components/Context/use.context";
 import { Helmet } from "react-helmet-async";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const { setToken } = useContext(UserContext);
   const [incorectInputs, setIncorectInputs] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const passwordRegux =
     /^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$/;
@@ -43,12 +45,10 @@ export default function Login() {
             data: values,
           };
           const { data } = await axios.request(config);
-          console.log(data);
           if (data.success) {
             toast.success(data.message);
             navigate("/");
             const token = data.data.token;
-            console.log(token);
             sessionStorage.setItem("token", token);
             setToken(token);
           }
@@ -65,7 +65,7 @@ export default function Login() {
       <Helmet>
         <title>Log In | Social App</title>
       </Helmet>
-      <main className="mainSignup min-h-screen">
+      <main className="mainSignup min-h-screen grid-rows-[minmax(220px,0.7fr)_auto] md:grid-rows-1">
       <section className="art-panel relative">
         <div className="relative z-10 flex space-x-2">
           <Link to={"/login"} className="logo flex items-center space-x-3">
@@ -98,16 +98,16 @@ export default function Login() {
         <div className="bottomDividerLine" />
       </section>
 
-      <section className="form-panel bg-[#f7f7f6] flex justify-center items-center p-8 md:p-12">
-        <div className="w-full max-w-[340px] sm:max-w-[380px] md:w-4/5 md:max-w-[420px] lg:w-full lg:max-w-[380px] mx-auto">
+      <section className="form-panel flex min-w-0 items-start justify-center bg-[#f7f7f6] px-5 py-8 sm:px-8 sm:py-10 md:items-center md:px-10 lg:px-12">
+        <div className="mx-auto w-full max-w-[440px]">
           {" "}
-          <h2 className="text-[#16161a] text-2xl font-bold pb-3">
+          <h2 className="pb-2 text-2xl font-bold tracking-tight text-[#16161a] sm:pb-3 sm:text-[28px]">
             Welcome back
           </h2>
-          <p className="text-gray-500 text-[12px] md:text-[14px] pb-5">
+          <p className="pb-5 text-[13px] leading-5 text-gray-500 sm:pb-6 sm:text-sm">
             Log in to continue to your account.
           </p>
-          <form className="grid grid-cols-1 gap-3" onSubmit={handleSubmit}>
+          <form className="grid grid-cols-1 gap-5" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="email" className="label">
                 Email address
@@ -141,20 +141,29 @@ export default function Login() {
                   Password
                 </label>
               </div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-                autoComplete="current-password"
-                className="inputField"
-                value={values.password}
-                onChange={(e) => {
-                  handleChange(e);
-                  setIncorectInputs(false);
-                }}
-                onBlur={handleBlur}
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  className="inputField pr-11"
+                  value={values.password}
+                  onChange={(e) => {
+                    handleChange(e);
+                    setIncorectInputs(false);
+                  }}
+                  onBlur={handleBlur}
+                />
+                <button
+                  type="button"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                  className="absolute inset-y-0 right-0 grid w-11 cursor-pointer place-items-center text-gray-500 hover:text-[#16161a]">
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              </div>
               {errors.password && touched.password ? (
                 <p className="mt-1 text-[13px] text-[#dc2626] bg-transparent">
                   *{errors.password}
@@ -176,11 +185,11 @@ export default function Login() {
               </div>
             </div>
 
-            <button type="submit" className="submitBtn mt-3">
+              <button type="submit" className="submitBtn mt-1 min-h-12">
               Log in
             </button>
           </form>
-          <p className="mt-3 md:mt-5 text-center text-[14px] text-gray-500">
+          <p className="mt-4 text-center text-[13px] leading-5 text-gray-500 sm:mt-5 sm:text-sm">
             Don&apos;t have an account?{" "}
             <Link
               to={"/signup"}

@@ -13,12 +13,13 @@ import {
   UserPlus,
 } from "lucide-react";
 import { UserContext } from "../Context/use.context";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import SharePostModal from "../SharePostModal/SharePostModal";
 import PostLikesModal from "../PostLikesModal/PostLikesModal";
 import EditPostModal from "../EditPostModal/EditPostModal";
+import EditCommentForm from "../EditCommentForm/EditCommentForm";
 import { followUser, getUserProfile } from "../UserServices/UserServices";
 import { Link } from "react-router";
 // import { followUser } from "../UserServices/UserServices";
@@ -44,6 +45,9 @@ export default function PostCard({
   const [isEditModal, setIsEditModal] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [isEditingTopComment, setIsEditingTopComment] = useState(false);
+  const [isTopCommentMenuOpen, setIsTopCommentMenuOpen] = useState(false);
+  const topCommentImageUrl = useRef(null);
 
   const currentUserId = userInfo?._id ?? userInfo?.id;
   const profilePath = (person) => {
@@ -72,7 +76,6 @@ export default function PostCard({
       if (data.success) {
         notifyPostUpdate(changes);
       }
-      console.log(data);
     } catch (error) {
       console.log(error);
     }
@@ -130,6 +133,35 @@ export default function PostCard({
   useEffect(() => {
     handleFollowingState();
   }, [token, post.user._id]);
+  useEffect(
+    () => () => {
+      if (topCommentImageUrl.current) {
+        URL.revokeObjectURL(topCommentImageUrl.current);
+      }
+    },
+    [],
+  );
+
+  function handleTopCommentUpdated(changes) {
+    let image = post.topComment.image;
+    if (changes.imageFile) {
+      if (topCommentImageUrl.current) {
+        URL.revokeObjectURL(topCommentImageUrl.current);
+      }
+      image = URL.createObjectURL(changes.imageFile);
+      topCommentImageUrl.current = image;
+    }
+    notifyPostUpdate({
+      topComment: {
+        ...post.topComment,
+        content: changes.content,
+        ...(changes.imageFile ? { image } : {}),
+        isEdited: true,
+      },
+    });
+    setIsEditingTopComment(false);
+    setIsTopCommentMenuOpen(false);
+  }
   return (
     <div className="w-full mx-auto" onClick={onClose}>
       <article
@@ -352,11 +384,9 @@ export default function PostCard({
               {post.likesCount} likes
             </span>
             <div className="flex items-center gap-3">
+              {" "}
               <Link to={`/posts/postDetails/${post._id}`}>
-                {" "}
-                <Link to={`/posts/postDetails/${post._id}`}>
-                  <span>{post.commentsCount} comments</span>
-                </Link>
+                <span>{post.commentsCount} comments</span>
               </Link>
               <span>{post.sharesCount} shares</span>
             </div>
@@ -382,8 +412,8 @@ export default function PostCard({
               <MessageCircle className="size-4" aria-hidden="true" />
 
               <Link to={`/posts/postDetails/${post._id}`}>
-                <span>Comment</span>
-              s</Link>
+                <span>Comment</span>s
+              </Link>
             </button>
             <button
               onClick={() => {
@@ -421,24 +451,111 @@ export default function PostCard({
                   />
                 </Link>
 
-                <div className="min-w-0 flex-1 rounded-xl bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,15,16,0.04)] ring-1 ring-[#f0f0ee]">
-                  <div className="flex flex-wrap items-baseline gap-x-1.5">
-                    <Link
-                      to={profilePath(post.topComment.commentCreator)}
-                      className="text-xs font-semibold text-[#16161a] hover:underline">
-                      {post.topComment.commentCreator.name}
-                    </Link>
-                    <Link
-                      to={profilePath(post.topComment.commentCreator)}
-                      className="text-[11px] text-[#929298] hover:underline">
-                      @{post.topComment.commentCreator.username}
-                    </Link>
-                  </div>
+                <div className="min-w-0 flex-1">
+                  {isEditingTopComment ? (
+                    <EditCommentForm
+                      postId={post._id}
+                      comment={post.topComment}
+                      onCancel={() => setIsEditingTopComment(false)}
+                      onUpdated={handleTopCommentUpdated}
+                    />
+                  ) : (
+                    <div className="min-w-0 rounded-xl bg-white px-3 py-2.5 shadow-[0_1px_2px_rgba(15,15,16,0.04)] ring-1 ring-[#f0f0ee]">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-2">
+                          <Link
+                            to={profilePath(post.topComment.commentCreator)}
+                            className="text-xs font-semibold text-[#16161a] hover:underline">
+                            {post.topComment.commentCreator.name}
+                          </Link>
+                          {(post.topComment.isEdited ||
+                            (post.topComment.updatedAt &&
+                              post.topComment.createdAt &&
+                              new Date(post.topComment.updatedAt) >
+                                new Date(post.topComment.createdAt))) && (
+                            <span className="text-[10px] text-[#929298]">
+                              Edited
+                            </span>
+                          )}
+                          <Link
+                            to={profilePath(post.topComment.commentCreator)}
+                            className="text-[11px] text-[#929298] hover:underline">
+                            @{post.topComment.commentCreator.username}
+                          </Link>
+                        </div>
+                        {Boolean(
+                          currentUserId &&
+                          (post.topComment.commentCreator?._id ??
+                            post.topComment.commentCreator?.id) ===
+                            currentUserId,
+                        ) && (
+                          <div className="relative -mr-1 -mt-1 shrink-0">
+                            <button
+                              type="button"
+                              aria-label="Comment actions"
+                              aria-haspopup="menu"
+                              aria-expanded={isTopCommentMenuOpen}
+                              onClick={() =>
+                                setIsTopCommentMenuOpen((open) => !open)
+                              }
+                              className="flex size-7 cursor-pointer items-center justify-center rounded-full text-[#707078] transition-colors hover:bg-black/5 hover:text-[#16161a]">
+                              <Ellipsis className="size-4" aria-hidden="true" />
+                            </button>
+                            {isTopCommentMenuOpen && (
+                              <div
+                                role="menu"
+                                className="absolute right-0 top-full z-20 mt-1 w-32 overflow-hidden rounded-xl border border-[#e8e8e6] bg-white p-1 shadow-[0_8px_24px_rgba(22,22,26,0.12)]">
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  onClick={() => {
+                                    setIsTopCommentMenuOpen(false);
+                                    setIsEditingTopComment(true);
+                                  }}
+                                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-[#29292d] hover:bg-[#f7f7f6]">
+                                  <Pencil
+                                    className="size-3.5"
+                                    aria-hidden="true"
+                                  />
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  role="menuitem"
+                                  disabled
+                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-[#c0393f] opacity-60">
+                                  <Trash2
+                                    className="size-3.5"
+                                    aria-hidden="true"
+                                  />
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
-                  {post.topComment.content && (
-                    <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-[#424249] sm:text-sm">
-                      {post.topComment.content}
-                    </p>
+                      {(post.topComment.content || post.topComment.image) && (
+                        <Link
+                          to={`/posts/postDetails/${post._id}`}
+                          className="block cursor-pointer">
+                          {post.topComment.content && (
+                            <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-[#424249] sm:text-sm">
+                              {post.topComment.content}
+                            </p>
+                          )}
+                          {post.topComment.image && (
+                            <img
+                              loading="lazy"
+                              src={post.topComment.image}
+                              alt="Comment attachment"
+                              className="mt-2 block max-h-[200px] w-full max-w-[240px] rounded-xl object-cover"
+                            />
+                          )}
+                        </Link>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>

@@ -23,21 +23,7 @@ export default function EditPostModal({ post, setIsEditModal, onPostUpdated }) {
   const previousFocusRef = useRef(null);
 
   const schema = yup.object({
-    body: yup
-      .string()
-      .test(
-        "min-body-length",
-        "body must be at least 20 characters",
-        function (body) {
-          const text = body?.trim() || "";
-          if (!text) {
-            return Boolean(
-              this.parent.image || post?.image || post?.sharedPost,
-            );
-          }
-          return text.length >= 20;
-        },
-      ),
+    body: yup.string().min(3, "body must be at least 3 characters"),
     image: yup
       .mixed()
       .nullable()
@@ -119,7 +105,6 @@ export default function EditPostModal({ post, setIsEditModal, onPostUpdated }) {
           "We couldn’t save your changes. Please try again.";
 
         setStatus(message);
-        toast.error(message);
       }
     },
   });
@@ -187,8 +172,7 @@ export default function EditPostModal({ post, setIsEditModal, onPostUpdated }) {
     };
   }, [imagePreview]);
 
-
-//   close function
+  //   close function
   function onClose(event) {
     if (event.target === event.currentTarget && !isSubmitting) {
       setIsEditModal(false);
@@ -243,7 +227,8 @@ export default function EditPostModal({ post, setIsEditModal, onPostUpdated }) {
           <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
             <div className="flex items-center gap-3">
               {post.user?.photo ? (
-                <img loading="lazy"
+                <img
+                  loading="lazy"
                   src={post.user.photo}
                   alt=""
                   className="size-10 shrink-0 rounded-full bg-[#f2f2f1] object-cover sm:size-11"
@@ -328,7 +313,8 @@ export default function EditPostModal({ post, setIsEditModal, onPostUpdated }) {
                   {values.image ? "New image preview" : "Current post image"}
                 </div>
 
-                <img loading="lazy"
+                <img
+                  loading="lazy"
                   src={imagePreview}
                   alt={
                     values.image
@@ -402,7 +388,8 @@ export default function EditPostModal({ post, setIsEditModal, onPostUpdated }) {
 
                 <div className="flex items-center gap-2.5 px-3.5 py-3 sm:px-4">
                   {post.sharedPost.user?.photo ? (
-                    <img loading="lazy"
+                    <img
+                      loading="lazy"
                       src={post.sharedPost.user.photo}
                       alt=""
                       className="size-8 shrink-0 rounded-full bg-[#f2f2f1] object-cover"
@@ -444,7 +431,8 @@ export default function EditPostModal({ post, setIsEditModal, onPostUpdated }) {
                 )}
 
                 {post.sharedPost.image && (
-                  <img loading="lazy"
+                  <img
+                    loading="lazy"
                     src={post.sharedPost.image}
                     alt={`Original post by ${
                       post.sharedPost.user?.name || "user"

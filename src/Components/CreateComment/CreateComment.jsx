@@ -83,7 +83,6 @@ export default function CreateComment({ id, getPost, getAllComments }) {
           error.response?.data || error.message,
         );
 
-        toast.error(error.response?.data?.message || "Failed to add comment");
       }
     },
   });
@@ -155,13 +154,13 @@ export default function CreateComment({ id, getPost, getAllComments }) {
           onBlur={handleBlur}
         />
 
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-1.5 sm:gap-2">
           <Link to="/my-profile" title="My profile" className="mb-1 shrink-0">
             <img
               loading="lazy"
               src={userInfo?.photo || DEFAULT_PROFILE_PHOTO}
               alt={`${userInfo?.name || "User"}'s profile`}
-              className="size-8 rounded-full bg-[#f2f2f1] object-cover sm:size-9"
+              className="size-7 rounded-full bg-[#f2f2f1] object-cover sm:size-9"
             />
           </Link>
 
@@ -174,6 +173,16 @@ export default function CreateComment({ id, getPost, getAllComments }) {
               value={values.content}
               onChange={handleChange}
               onBlur={handleBlur}
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter" &&
+                  !event.shiftKey &&
+                  !event.nativeEvent.isComposing
+                ) {
+                  event.preventDefault();
+                  if (!isSubmitting) event.currentTarget.form?.requestSubmit();
+                }
+              }}
               placeholder="Write a comment..."
               aria-label="Write a comment"
               aria-invalid={Boolean(touched.content && errors.content)}
@@ -182,7 +191,7 @@ export default function CreateComment({ id, getPost, getAllComments }) {
                   ? "commentcontentError"
                   : undefined
               }
-              className="absolute bottom-0 left-0 z-10 max-h-36 min-h-11 w-full resize-none overflow-y-hidden rounded-xl border border-[#e8e8e6] bg-white px-3.5 py-3 pr-12 text-sm leading-5 text-[#16161a] shadow-[0_4px_16px_rgba(22,22,26,0.06)] outline-none transition-colors duration-150 placeholder:text-[#929298] hover:border-[#d8d8d5] focus:border-[#16161a] focus:shadow-[0_0_0_3px_rgba(22,22,26,0.06)]"
+              className="absolute bottom-0 left-0 z-10 max-h-36 min-h-11 w-full resize-none overflow-y-hidden rounded-xl border border-[#e8e8e6] bg-white px-3.5 py-3 pr-11 text-sm leading-5 text-[#16161a] shadow-[0_4px_16px_rgba(22,22,26,0.06)] outline-none transition-colors duration-150 placeholder:text-[#929298] hover:border-[#d8d8d5] focus:border-[#16161a] focus:shadow-[0_0_0_3px_rgba(22,22,26,0.06)] sm:pr-12"
             />
 
             <label
@@ -196,7 +205,7 @@ export default function CreateComment({ id, getPost, getAllComments }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mb-0.5 inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#16161a] px-3.5 text-xs font-semibold text-white shadow-[0_4px_12px_rgba(22,22,26,0.10)] transition-colors duration-150 hover:bg-[#2a2a2e] focus:outline-none focus:ring-2 focus:ring-[#16161a]/15 disabled:cursor-not-allowed disabled:opacity-60 sm:px-4 sm:text-sm disabled:cursor-not-allowed ">
+            className="mb-0.5 inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-lg bg-[#16161a] px-2.5 text-[11px] font-semibold text-white shadow-[0_4px_12px_rgba(22,22,26,0.10)] transition-colors duration-150 hover:bg-[#2a2a2e] focus:outline-none focus:ring-2 focus:ring-[#16161a]/15 disabled:cursor-not-allowed disabled:opacity-60 sm:h-10 sm:gap-1.5 sm:px-4 sm:text-sm disabled:cursor-not-allowed ">
             {isSubmitting ? (
               <LoaderCircle
                 className="size-4 animate-spin"
