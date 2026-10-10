@@ -36,7 +36,9 @@ export default function PostDetails() {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [openCommentMenuId, setOpenCommentMenuId] = useState(null);
   const [deletingCommentId, setDeletingCommentId] = useState(null);
-  const [pendingLikeCommentIds, setPendingLikeCommentIds] = useState(() => new Set());
+  const [pendingLikeCommentIds, setPendingLikeCommentIds] = useState(
+    () => new Set(),
+  );
   const pendingLikeCommentIdsRef = useRef(new Set());
   const localCommentImageUrls = useRef(new Map());
   const getCommentLikes = (comment) =>
@@ -44,14 +46,16 @@ export default function PostDetails() {
   const getLikeUserId = (like) =>
     typeof like === "string" || typeof like === "number"
       ? String(like)
-      : String(like?._id ?? like?.id ?? like?.user?._id ?? like?.user?.id ?? "");
+      : String(
+          like?._id ?? like?.id ?? like?.user?._id ?? like?.user?.id ?? "",
+        );
   const isCommentLikedByCurrentUser = (comment) => {
     const currentUserId = userInfo?._id ?? userInfo?.id;
     return Boolean(
       currentUserId &&
-        getCommentLikes(comment).some(
-          (like) => getLikeUserId(like) === String(currentUserId),
-        ),
+      getCommentLikes(comment).some(
+        (like) => getLikeUserId(like) === String(currentUserId),
+      ),
     );
   };
   const profilePath = (person) => {
@@ -98,7 +102,11 @@ export default function PostDetails() {
   async function handleCommentLike(comment) {
     const commentId = comment._id ?? comment.id;
     const currentUserId = userInfo?._id ?? userInfo?.id;
-    if (!commentId || !currentUserId || pendingLikeCommentIdsRef.current.has(commentId)) {
+    if (
+      !commentId ||
+      !currentUserId ||
+      pendingLikeCommentIdsRef.current.has(commentId)
+    ) {
       return;
     }
 
@@ -183,10 +191,16 @@ export default function PostDetails() {
               : previous.topComment,
         };
       });
-      setRepliesByComment(({ [commentId]: _removedReplies, ...remaining }) => remaining);
+      setRepliesByComment(
+        ({ [commentId]: _removedReplies, ...remaining }) => remaining,
+      );
       setReplyPages(({ [commentId]: _removedPage, ...remaining }) => remaining);
-      setExpandedReplies(({ [commentId]: _removedExpanded, ...remaining }) => remaining);
-      setLoadingReplyPages(({ [commentId]: _removedLoading, ...remaining }) => remaining);
+      setExpandedReplies(
+        ({ [commentId]: _removedExpanded, ...remaining }) => remaining,
+      );
+      setLoadingReplyPages(
+        ({ [commentId]: _removedLoading, ...remaining }) => remaining,
+      );
       setReplyFormCommentId((current) =>
         current === commentId ? null : current,
       );
@@ -427,8 +441,8 @@ export default function PostDetails() {
 
       {/* Loaded post */}
       {!loading && !error && post && (
-        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-5 ">
-          <div className="lg:gap-6 md:col-span-2 lg:col-span-3 items-start lg:sticky lg:top-30 lg:h-fit">
+        <div className="mt-3 grid grid-cols-1 lg:grid-cols-5 gap-5 ">
+          <div className="lg:gap-6 lg:col-span-3 items-start lg:sticky lg:top-30 lg:h-fit">
             <PostCard
               post={post}
               onPostUpdate={handlePostUpdate}
@@ -559,8 +573,12 @@ export default function PostDetails() {
                                         <button
                                           type="button"
                                           role="menuitem"
-                                          disabled={deletingCommentId === comment._id}
-                                          onClick={() => handleDeleteComment(comment)}
+                                          disabled={
+                                            deletingCommentId === comment._id
+                                          }
+                                          onClick={() =>
+                                            handleDeleteComment(comment)
+                                          }
                                           className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-medium text-[#c0393f] disabled:cursor-wait disabled:opacity-60">
                                           <Trash2
                                             className="size-3.5"
@@ -596,8 +614,12 @@ export default function PostDetails() {
                           <div className="mt-1.5 flex items-center gap-3.5">
                             <button
                               type="button"
-                              aria-pressed={isCommentLikedByCurrentUser(comment)}
-                              disabled={pendingLikeCommentIds.has(comment._id ?? comment.id)}
+                              aria-pressed={isCommentLikedByCurrentUser(
+                                comment,
+                              )}
+                              disabled={pendingLikeCommentIds.has(
+                                comment._id ?? comment.id,
+                              )}
                               onClick={() => handleCommentLike(comment)}
                               className={`flex items-center gap-1 text-[11px] font-medium transition-colors duration-150 disabled:cursor-wait disabled:opacity-60 sm:text-xs ${isCommentLikedByCurrentUser(comment) ? "text-[#F33E58]" : "text-[#929298] hover:text-[#16161a]"}`}>
                               <Heart
