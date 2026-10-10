@@ -1,5 +1,14 @@
 import axios from "axios";
 
+export function isUserFollowing(userInfo, userId) {
+  if (!userId || !Array.isArray(userInfo?.following)) return false;
+
+  return userInfo.following.some((person) => {
+    const followedUserId = person?._id ?? person?.id ?? person;
+    return String(followedUserId) === String(userId);
+  });
+}
+
 // put follow, unFollow
 export async function followUser(token, userId) {
   const { data } = await axios.request({

@@ -1,5 +1,35 @@
 export { cn } from "cn";
 
+export function formatRelativePostTime(
+  value: string | number | Date | null | undefined,
+): string {
+  if (!value) return "";
+
+  const timestamp = new Date(value).getTime();
+  if (!Number.isFinite(timestamp)) return "";
+
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((Date.now() - timestamp) / 1000),
+  );
+  if (elapsedSeconds < 1) return "now";
+  if (elapsedSeconds < 60) return `${elapsedSeconds}s`;
+
+  const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+  if (elapsedMinutes < 60) return `${elapsedMinutes}min`;
+
+  const elapsedHours = Math.floor(elapsedMinutes / 60);
+  if (elapsedHours < 24) return `${elapsedHours} h`;
+
+  const elapsedDays = Math.floor(elapsedHours / 24);
+  if (elapsedDays < 7) {
+    return `${elapsedDays} day${elapsedDays === 1 ? "" : "s"}`;
+  }
+  if (elapsedDays < 30) return `${Math.floor(elapsedDays / 7)}w`;
+  if (elapsedDays < 365) return `${Math.floor(elapsedDays / 30)} m`;
+  return `${Math.floor(elapsedDays / 365)}y`;
+}
+
 type PostRecord = {
   _id?: string;
   id?: string;

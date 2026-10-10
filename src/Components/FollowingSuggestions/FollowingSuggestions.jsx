@@ -9,7 +9,7 @@ import {
 import { UserContext } from "../Context/use.context";
 import { useContext, useEffect, useState } from "react";
 import axios from "axios";
-import { followUser } from "../UserServices/UserServices";
+import { followUser, isUserFollowing } from "../UserServices/UserServices";
 import { Link } from "react-router";
 
 export default function FollowingSuggestions() {
@@ -36,17 +36,36 @@ export default function FollowingSuggestions() {
     };
     const { data } = await axios.request(config);
     if (data.success) {
-      const suggestions = await data.data.suggestions;
+      const suggestions = data.data.suggestions;
       setSuggestions(suggestions);
+      setFollowingState((previous) => {
+        const nextState = { ...previous };
+        suggestions.forEach((person) => {
+          const personId = person._id ?? person.id;
+          if (typeof nextState[personId] !== "boolean") {
+            nextState[personId] = Boolean(
+              person.isFollowing ?? isUserFollowing(userInfo, personId),
+            );
+          }
+        });
+        return nextState;
+      });
     }
   }
   useEffect(() => {
     fetchFollowingSuggestions();
-  }, [currentPage]);
+  }, [currentPage, token, userInfo?.following]);
+
+  useEffect(() => {
+    setFollowingState({});
+    setSuggestions(null);
+  }, [token, userInfo?._id, userInfo?.id]);
 
   async function handleFollowUser(person) {
     try {
-      const data = await followUser(token, person._id);
+      const personId = person._id ?? person.id;
+      const currentlyFollowing = Boolean(followingState[personId]);
+      const data = await followUser(token, personId);
       if (data.success) {
         // Use an object to keep a separate following state for each user,
         // so updating one user's state doesn't affect the other users
@@ -58,7 +77,9 @@ export default function FollowingSuggestions() {
         */
         setFollowingState((prev) => ({
           ...prev,
-          [person._id]: data.data.following,
+          [personId]: Boolean(
+            data.data.following ?? data.data.isFollowing ?? !currentlyFollowing,
+          ),
         }));
       }
     } catch (error) {
@@ -67,7 +88,7 @@ export default function FollowingSuggestions() {
   function handleDismissSuggestion(personId) {
     // return array that i want to appeat after click on X
     const currentSuggestion = suggestions.filter(
-      (person) => person._id !== personId,
+      (person) => String(person._id ?? person.id) !== String(personId),
     );
     if (currentSuggestion.length > 0) {
       setSuggestions(currentSuggestion);
@@ -99,7 +120,13 @@ export default function FollowingSuggestions() {
       <ul className="divide-y divide-[#eeeeec] px-4 sm:px-5">
         {suggestions ? (
           suggestions.map((person) => {
-            const isFollowing = Boolean(followingState[person._id]);
+            const personId = person._id ?? person.id;
+            const isFollowing =
+              typeof followingState[personId] === "boolean"
+                ? followingState[personId]
+                : Boolean(
+                    person.isFollowing ?? isUserFollowing(userInfo, personId),
+                  );
 
             return (
               <li
@@ -164,7 +191,7 @@ export default function FollowingSuggestions() {
                     <span>{isFollowing ? "Following" : "Follow"}</span>
                   </button>
                   <button
-                    onClick={() => handleDismissSuggestion(person._id)}
+                    onClick={() => handleDismissSuggestion(personId)}
                     type="button"
                     aria-label={`Dismiss ${person.name} suggestion`}
                     className="cursor-pointer flex size-8 items-center justify-center rounded-lg text-[#929298] transition-colors hover:bg-[#f2f2f1] hover:text-[#16161a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16161a]/20 sm:size-9">

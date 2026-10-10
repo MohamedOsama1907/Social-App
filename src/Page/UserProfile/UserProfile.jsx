@@ -1,4 +1,4 @@
-import { Calendar, UserRound, Mail, Users } from "lucide-react";
+import { Calendar, UserRound, Mail, Users, Check } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { Link } from "react-router";
@@ -33,7 +33,7 @@ export default function UserProfile() {
   async function handleFollowing() {
     const data = await followUser(token, id);
     if (data.success) {
-      setIsFollowing(data.data.isFollowing);
+      setIsFollowing(Boolean(data.data.isFollowing ?? data.data.following));
       await handleUserProfile(); // Refresh user profile to get updated followers count and following state
     }
   }
@@ -116,12 +116,14 @@ export default function UserProfile() {
               }}
               type="button"
               aria-pressed={isFollowing}
-              className={`cursor-pointer inline-flex h-10 w-full shrink-0 items-center justify-center rounded-lg px-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16161a]/30 focus-visible:ring-offset-2 sm:mb-1 sm:w-auto ${
+              aria-label={`${isFollowing ? "Unfollow" : "Follow"} ${user.name}`}
+              className={`cursor-pointer inline-flex h-10 w-full shrink-0 items-center justify-center gap-1.5 rounded-lg px-5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16161a]/30 focus-visible:ring-offset-2 sm:mb-1 sm:w-auto ${
                 isFollowing
                   ? "border border-[#e8e8e6] bg-white text-[#16161a] hover:bg-[#f7f7f6]"
                   : "bg-[#16161a] text-white shadow-[0_6px_18px_rgba(22,22,26,0.12)] hover:bg-[#303036]"
               }`}>
-              {isFollowing ? "Unfollow" : "Follow"}
+              {isFollowing && <Check size={16} aria-hidden="true" />}
+              {isFollowing ? "Following" : "Follow"}
             </button>
           </div>
 

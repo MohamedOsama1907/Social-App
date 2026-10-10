@@ -20,17 +20,14 @@ import SharePostModal from "../SharePostModal/SharePostModal";
 import PostLikesModal from "../PostLikesModal/PostLikesModal";
 import EditPostModal from "../EditPostModal/EditPostModal";
 import EditCommentForm from "../EditCommentForm/EditCommentForm";
-import { followUser, getUserProfile } from "../UserServices/UserServices";
+import {
+  followUser,
+  getUserProfile,
+  isUserFollowing,
+} from "../UserServices/UserServices";
 import { Link } from "react-router";
+import { formatRelativePostTime } from "../../lib/utils";
 // import { followUser } from "../UserServices/UserServices";
-
-function formatPostDate(date) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
 //* post card component
 export default function PostCard({
   post,
@@ -54,7 +51,11 @@ export default function PostCard({
     const personId = person?._id ?? person?.id;
     return personId === currentUserId ? "/my-profile" : `/profile/${personId}`;
   };
-  const isOwnPost = userInfo?._id === post.user._id;
+  const postOwnerId = post.user?._id ?? post.user?.id;
+  const isOwnPost =
+    Boolean(currentUserId && postOwnerId) &&
+    String(currentUserId) === String(postOwnerId);
+  const cannotSharePost = isOwnPost || Boolean(post.isShare);
   function notifyPostUpdate(changes) {
     onPostUpdate?.({ ...post, ...changes }, post.bookmarked);
   }
@@ -119,20 +120,25 @@ export default function PostCard({
     }
   }
   async function handleFollowing() {
-    const data = await followUser(token, post.user._id);
+    const data = await followUser(token, postOwnerId);
     if (data.success) {
-      setIsFollowing(data.data.following);
+      setIsFollowing(Boolean(data.data.following ?? data.data.isFollowing));
     }
   }
   async function handleFollowingState() {
-    const data = await getUserProfile(token, post.user._id);
+    const data = await getUserProfile(token, postOwnerId);
     if (data.success) {
-      setIsFollowing(data.data.isFollowing);
+      setIsFollowing(
+        Boolean(data.data.isFollowing ?? isUserFollowing(userInfo, postOwnerId)),
+      );
+    } else {
+      setIsFollowing(isUserFollowing(userInfo, postOwnerId));
     }
   }
   useEffect(() => {
+    setIsFollowing(isUserFollowing(userInfo, postOwnerId));
     handleFollowingState();
-  }, [token, post.user._id]);
+  }, [token, postOwnerId, userInfo?.following]);
   useEffect(
     () => () => {
       if (topCommentImageUrl.current) {
@@ -209,7 +215,7 @@ export default function PostCard({
                 </div>
               </div>
               <div className=" flex items-center gap-1.5 text-xs text-[#929298] sm:text-sm">
-                <span>{formatPostDate(post.createdAt)}</span>
+                <span>{formatRelativePostTime(post.createdAt)}</span>
                 <span aria-hidden="true">·</span>
                 <Globe2 className="size-3.5" aria-hidden="true" />
                 <span>{post.privacy}</span>
@@ -350,7 +356,7 @@ export default function PostCard({
                   </Link>
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-[#929298] sm:text-xs">
-                  <span>{formatPostDate(post.sharedPost.createdAt)}</span>
+                  <span>{formatRelativePostTime(post.sharedPost.createdAt)}</span>
                   <span aria-hidden="true">·</span>
                   <Globe2 className="size-3" aria-hidden="true" />
                   <span>{post.sharedPost.privacy}</span>
@@ -420,9 +426,19 @@ export default function PostCard({
                 setIsShareModalOpen(true);
               }}
               type="button"
-              className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg py-2 transition-colors duration-150 hover:text-[#16161a] ${post.isShare ? "text-[#16161a]" : ""}`}>
+              disabled={cannotSharePost}
+              title={
+                isOwnPost
+                  ? "You can’t share your own post"
+                  : post.isShare
+                    ? "You’ve already shared this post"
+                    : "Share post"
+              }
+              className={`flex items-center justify-center gap-2 rounded-lg py-2 transition-colors duration-150 ${cannotSharePost ? "cursor-not-allowed text-[#929298]" : "cursor-pointer text-[#707078] hover:text-[#16161a]"}`}>
               <Repeat2 className={`size-4`} aria-hidden="true" />
-              <span>{post.isShare ? "Shared" : "Share"}</span>
+              <span>
+                {isOwnPost ? "Your post" : post.isShare ? "Shared" : "Share"}
+              </span>
             </button>
             <button
               onClick={handleBookMark}

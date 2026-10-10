@@ -5,13 +5,7 @@ import { useContext } from "react";
 import { UserContext } from "../Context/use.context";
 import { useFormik } from "formik";
 import * as yup from "yup";
-function formatPostDate(date) {
-  return new Date(date).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
+import { formatRelativePostTime } from "../../lib/utils";
 
 export default function SharePostModal({
   onPostShared,
@@ -19,6 +13,14 @@ export default function SharePostModal({
   setIsShareModalOpen,
 }) {
   const { token, userInfo } = useContext(UserContext);
+  const currentUserId = userInfo?._id ?? userInfo?.id;
+  const postOwnerId = post?.user?._id ?? post?.user?.id;
+  const cannotSharePost =
+    !post ||
+    !currentUserId ||
+    !postOwnerId ||
+    String(currentUserId) === String(postOwnerId) ||
+    Boolean(post.isShare);
   const schema = yup.object({
     body: yup.string().nullable(),
   });
@@ -29,6 +31,8 @@ export default function SharePostModal({
       },
       validationSchema: schema,
       onSubmit: async function handleShare(values) {
+        if (cannotSharePost) return;
+
         try {
           const config = {
             url: `https://route-posts.routemisr.com/posts/${post._id}/share`,
@@ -141,7 +145,7 @@ export default function SharePostModal({
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-[11px] text-[#929298] sm:text-xs">
-                    <span>{formatPostDate(post.createdAt)}</span>
+                    <span>{formatRelativePostTime(post.createdAt)}</span>
                     <span aria-hidden="true">·</span>
                   </div>
                 </div>
@@ -177,7 +181,7 @@ export default function SharePostModal({
                         </span>
                       </div>
                       <div className="flex items-center gap-1 text-[11px] text-[#929298] sm:text-xs">
-                        <span>{formatPostDate(post.sharedPost.createdAt)}</span>
+                        <span>{formatRelativePostTime(post.sharedPost.createdAt)}</span>
                         <span aria-hidden="true">·</span>
                         <Globe2 className="size-3" aria-hidden="true" />
                         <span>{post.sharedPost.privacy}</span>
