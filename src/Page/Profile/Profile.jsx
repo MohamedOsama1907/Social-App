@@ -1,7 +1,7 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { UserContext } from "../../Components/Context/use.context";
 import axios from "axios";
-import { Calendar, Camera, UserRound, Bookmark, Users } from "lucide-react";
+import { Calendar, Camera, UserRound, Bookmark, Users, Check } from "lucide-react";
 import PostCard from "../../Components/PostCard/PostCard";
 import PostSkeleton from "../../Components/PostSkelleton/PostSkelleton";
 import {
@@ -14,7 +14,11 @@ import imageCover from "../../assets/background.jpeg";
 import UpdatePhotoModal from "../../Components/UpdatePhotoModal/UpdatePhotoModal";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router";
-import { getUserProfile } from "../../Components/UserServices/UserServices";
+import {
+  followUser,
+  getUserProfile,
+  isUserFollowing,
+} from "../../Components/UserServices/UserServices";
 // User Skelleton as a follower
 function UserRowSkeleton() {
   return (
@@ -28,16 +32,75 @@ function UserRowSkeleton() {
   );
 }
 // Follower, Following Component
-function UserRow({ user }) {
+function UserRow({ user, token, setUserInfo, initialIsFollowing }) {
   const { userInfo } = useContext(UserContext);
+  const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
+  const [isUpdatingFollow, setIsUpdatingFollow] = useState(false);
+  const [followError, setFollowError] = useState("");
   const userId = user._id ?? user.id;
   const currentUserId = userInfo?._id ?? userInfo?.id;
+
+  async function handleFollowToggle() {
+    if (isUpdatingFollow || !userId) return;
+
+    setIsUpdatingFollow(true);
+    setFollowError("");
+    try {
+      const response = await followUser(token, userId);
+      if (!response?.success) {
+        throw new Error(response?.message || "Could not update follow status.");
+      }
+
+      const nextIsFollowing = Boolean(
+        response.data?.following ?? response.data?.isFollowing ?? !isFollowing,
+      );
+      setIsFollowing(nextIsFollowing);
+      if (userInfo) {
+        const currentFollowing = Array.isArray(userInfo.following)
+          ? userInfo.following
+          : [];
+        const alreadyFollowing = currentFollowing.some((person) => {
+          const followedUserId = person?._id ?? person?.id ?? person;
+          return String(followedUserId) === String(userId);
+        });
+        if (alreadyFollowing !== nextIsFollowing) {
+          const nextFollowing = nextIsFollowing
+            ? [...currentFollowing, userId]
+            : currentFollowing.filter((person) => {
+                const followedUserId = person?._id ?? person?.id ?? person;
+                return String(followedUserId) !== String(userId);
+              });
+          const updatedUserInfo = {
+            ...userInfo,
+            following: nextFollowing,
+            followingCount: Math.max(
+              0,
+              (userInfo.followingCount ?? currentFollowing.length) +
+                (nextIsFollowing ? 1 : -1),
+            ),
+          };
+          setUserInfo(updatedUserInfo);
+          sessionStorage.setItem("userInfo", JSON.stringify(updatedUserInfo));
+        }
+      }
+    } catch (error) {
+      setFollowError(
+        error.response?.data?.message ||
+          error.message ||
+          "Could not update follow status.",
+      );
+    } finally {
+      setIsUpdatingFollow(false);
+    }
+  }
+
   return (
     <li className="flex items-center gap-3 px-4 py-3">
       <Link
         to={userId === currentUserId ? "/my-profile" : `/profile/${userId}`}
         className="flex min-w-0 flex-1 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16161a]/30">
-        <img loading="lazy"
+        <img
+          loading="lazy"
           src={user.photo}
           alt={user.name}
           className="w-9 h-9 rounded-full object-cover border border-[#16161a]/8 bg-[#eeeeec] shrink-0"
@@ -51,11 +114,31 @@ function UserRow({ user }) {
           </p>
         </div>
       </Link>
-      <button
-        type="button"
-        className="shrink-0 px-3 py-1.5 rounded-lg border border-[#16161a]/8 text-[12px] font-medium text-[#16161a] hover:bg-[#f2f2f1] transition-colors duration-150">
-        Follow
-      </button>
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        <button
+          type="button"
+          onClick={handleFollowToggle}
+          disabled={isUpdatingFollow}
+          aria-label={`${isFollowing ? "Unfollow" : "Follow"} ${user.name}`}
+          aria-pressed={isFollowing}
+          className={`inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-colors duration-150 disabled:cursor-wait disabled:opacity-60 ${
+            isFollowing
+              ? "border-[#e8e8e6] bg-[#f7f7f6] text-[#29292d] hover:border-[#c0393f]/20 hover:bg-[#fbecec] hover:text-[#c0393f]"
+              : "border-[#16161a] bg-[#16161a] text-white hover:bg-[#303036]"
+          }`}>
+          {isUpdatingFollow ? (
+            <span className="size-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          ) : (
+            isFollowing && <Check size={14} aria-hidden="true" />
+          )}
+          <span>{isFollowing ? "Following" : "Follow"}</span>
+        </button>
+        {followError && (
+          <span role="alert" className="max-w-40 text-right text-[10px] text-[#c0393f]">
+            {followError}
+          </span>
+        )}
+      </div>
     </li>
   );
 }
@@ -113,6 +196,8 @@ export default function Profile() {
     username,
     _id,
   } = userInfo || {};
+  const followingRef = useRef(following);
+  followingRef.current = following;
   async function getBookMarks() {
     setBookmarksLoading(true);
     try {
@@ -148,7 +233,6 @@ export default function Profile() {
     }
 
     if (token) loadFollowers();
-    else setFollowersLoading(false);
 
     return () => {
       isCurrent = false;
@@ -161,7 +245,10 @@ export default function Profile() {
     async function loadFollowing() {
       setFollowingLoading(true);
       try {
-        const users = await getRelationshipUsers(token, following ?? []);
+        const users = await getRelationshipUsers(
+          token,
+          followingRef.current ?? [],
+        );
         if (isCurrent) setFollowingUsers(users);
       } catch (error) {
         console.log(error);
@@ -172,12 +259,11 @@ export default function Profile() {
     }
 
     if (token) loadFollowing();
-    else setFollowingLoading(false);
 
     return () => {
       isCurrent = false;
     };
-  }, [following, token]);
+  }, [token, userId]);
 
   async function getMyPosts() {
     setMyPostsLoading(true);
@@ -274,7 +360,7 @@ export default function Profile() {
       <Helmet>
         <title>
           {name
-            ? `${name.slice(0, 2)} | Social App`
+            ? `${name.split(" ").slice(0, 2).join(" ")} | Social App`
             : "My Profile | Social App"}
         </title>
       </Helmet>
@@ -284,7 +370,8 @@ export default function Profile() {
         <div className="mt-4 lg:mt-12 bg-white  rounded-2xl border border-[#16161a]/8 shadow-[0_1px_2px_rgba(15,15,16,0.04),0_10px_28px_-14px_rgba(15,15,16,0.10)] overflow-hidden">
           {/* Cover */}
           <div className="relative h-36 w-full bg-[#eeeeec] md:h-48 lg:h-60">
-            <img loading="lazy"
+            <img
+              loading="lazy"
               src={cover || imageCover}
               alt=""
               className="size-full object-cover object-center"
@@ -296,11 +383,12 @@ export default function Profile() {
             <div className="flex items-end justify-between -mt-10 sm:-mt-12 md:-mt-14">
               <div className="relative size-20 shrink-0 sm:size-24 md:size-28">
                 <Link to="/my-profile" className="block size-full">
-                <img loading="lazy"
-                  src={photo}
-                  alt={name}
-                  className="size-full rounded-full border-4 border-white bg-[#eeeeec] object-cover shadow-[0_1px_2px_rgba(15,15,16,0.04),0_10px_28px_-14px_rgba(15,15,16,0.14)]"
-                />
+                  <img
+                    loading="lazy"
+                    src={photo}
+                    alt={name}
+                    className="size-full rounded-full border-4 border-white bg-[#eeeeec] object-cover shadow-[0_1px_2px_rgba(15,15,16,0.04),0_10px_28px_-14px_rgba(15,15,16,0.14)]"
+                  />
                 </Link>
                 <button
                   onClick={() => setUploadModal(true)}
@@ -459,6 +547,12 @@ export default function Profile() {
                     <UserRow
                       key={follower._id ?? follower.id}
                       user={follower}
+                      token={token}
+                      setUserInfo={setUserInfo}
+                      initialIsFollowing={isUserFollowing(
+                        userInfo,
+                        follower._id ?? follower.id,
+                      )}
                     />
                   ))}
                 </ul>
@@ -490,6 +584,9 @@ export default function Profile() {
                     <UserRow
                       key={followed._id ?? followed.id}
                       user={followed}
+                      token={token}
+                      setUserInfo={setUserInfo}
+                      initialIsFollowing={true}
                     />
                   ))}
                 </ul>
@@ -547,10 +644,6 @@ export default function Profile() {
           getMyPosts={getMyPosts}
         />
       )}
-      <footer className="mt-7 flex items-center justify-between border-t border-[#e9e9ed] pt-5 text-[11px] text-[#96969d]">
-        <span>Social App · Account settings</span>
-        <span>Privacy · Terms</span>
-      </footer>
     </div>
   );
 }
