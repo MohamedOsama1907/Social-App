@@ -419,15 +419,15 @@ export default function PostCard({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-1 pt-2 text-xs font-medium text-[#707078] sm:grid-cols-4 sm:gap-1 sm:text-sm">
+          <div className="grid grid-cols-4 gap-0 pt-2 text-[10px] font-medium text-[#707078] sm:gap-1 sm:text-sm">
             <button
               onClick={() => {
                 handleLike();
               }}
               type="button"
-              className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg py-2 transition-colors duration-150 hover:text-[#F33E58] ${post.likes.includes(userInfo?._id) ? "text-[#F33E58]" : ""}`}>
+              className={`flex min-w-0 cursor-pointer items-center justify-center gap-1 rounded-lg py-2 transition-colors duration-150 hover:text-[#F33E58] sm:gap-2 ${post.likes.includes(userInfo?._id) ? "text-[#F33E58]" : ""}`}>
               <Heart
-                className={`size-4 ${post.likes.includes(userInfo?._id) ? "fill-current text-[#F33E58]" : ""}`}
+                className={`size-3.5 shrink-0 sm:size-4 ${post.likes.includes(userInfo?._id) ? "fill-current text-[#F33E58]" : ""}`}
                 aria-hidden="true"
               />
               <span className="whitespace-nowrap">Like</span>
@@ -435,8 +435,8 @@ export default function PostCard({
 
             <button
               type="button"
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-lg py-2 transition-colors duration-150 hover:text-[#16161a]">
-              <MessageCircle className="size-4" aria-hidden="true" />
+              className="flex min-w-0 cursor-pointer items-center justify-center gap-1 rounded-lg py-2 transition-colors duration-150 hover:text-[#16161a] sm:gap-2">
+              <MessageCircle className="size-3.5 shrink-0 sm:size-4" aria-hidden="true" />
 
               <Link to={`/posts/postDetails/${post._id}`}>
                 <span className="whitespace-nowrap">Comments</span>
@@ -455,8 +455,8 @@ export default function PostCard({
                     ? "You’ve already shared this post"
                     : "Share post"
               }
-              className={`flex items-center justify-center gap-2 rounded-lg py-2 transition-colors duration-150 ${cannotSharePost ? "cursor-not-allowed text-[#929298]" : "cursor-pointer text-[#707078] hover:text-[#16161a]"}`}>
-              <Repeat2 className={`size-4`} aria-hidden="true" />
+              className={`flex min-w-0 items-center justify-center gap-1 rounded-lg py-2 transition-colors duration-150 sm:gap-2 ${cannotSharePost ? "cursor-not-allowed text-[#929298]" : "cursor-pointer text-[#707078] hover:text-[#16161a]"}`}>
+              <Repeat2 className="size-3.5 shrink-0 sm:size-4" aria-hidden="true" />
               <span className="whitespace-nowrap">
                 {isOwnPost ? "Your post" : post.isShare ? "Shared" : "Share"}
               </span>
@@ -466,9 +466,9 @@ export default function PostCard({
               type="button"
               aria-label={post.bookmarked ? "Remove saved post" : "Save post"}
               aria-pressed={Boolean(post.bookmarked)}
-              className={`flex cursor-pointer items-center justify-center gap-2 rounded-lg py-2 transition-colors duration-150 hover:text-[#16161a] ${post.bookmarked ? "text-[#16161a]" : ""}`}>
+              className={`flex min-w-0 cursor-pointer items-center justify-center gap-1 rounded-lg py-2 transition-colors duration-150 hover:text-[#16161a] sm:gap-2 ${post.bookmarked ? "text-[#16161a]" : ""}`}>
               <Bookmark
-                className={`size-4 ${post.bookmarked ? "fill-current text-[#16161a]" : ""}`}
+                className={`size-3.5 shrink-0 sm:size-4 ${post.bookmarked ? "fill-current text-[#16161a]" : ""}`}
                 aria-hidden="true"
               />
               <span className="whitespace-nowrap">
