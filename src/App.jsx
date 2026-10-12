@@ -88,6 +88,7 @@ function App() {
     <>
       <UserProvider>
         <Detector
+          polling={false}
           render={({ online }) =>
             online ? <RouterProvider router={router} /> : <OfflinePage />
           }
