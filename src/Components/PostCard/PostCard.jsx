@@ -12,7 +12,7 @@ import {
   Trash2,
   UserPlus,
 } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { UserContext } from "../Context/use.context";
 import { useContext, useEffect, useRef, useState } from "react";
 import axios from "axios";
@@ -23,7 +23,6 @@ import EditPostModal from "../EditPostModal/EditPostModal";
 import EditCommentForm from "../EditCommentForm/EditCommentForm";
 import {
   followUser,
-  getUserProfile,
   isUserFollowing,
 } from "../UserServices/UserServices";
 import { Link, useNavigate } from "react-router";
@@ -55,12 +54,6 @@ export default function PostCard({
     return personId === currentUserId ? "/my-profile" : `/profile/${personId}`;
   };
   const postOwnerId = post.user?._id ?? post.user?.id;
-  const { data: followingData } = useQuery({
-    queryKey: ["getUserProfile", postOwnerId],
-    queryFn: () => getUserProfile(token, postOwnerId),
-    enabled: Boolean(token && postOwnerId),
-    refetchOnMount: false,
-  });
   const isOwnPost =
     Boolean(currentUserId && postOwnerId) &&
     String(currentUserId) === String(postOwnerId);
@@ -69,9 +62,7 @@ export default function PostCard({
     followingOverride?.userId === String(postOwnerId)
       ? followingOverride.value
       : Boolean(
-          followingData?.success
-            ? followingData.data.isFollowing ?? isUserFollowing(userInfo, postOwnerId)
-            : isUserFollowing(userInfo, postOwnerId),
+          post.user?.isFollowing ?? isUserFollowing(userInfo, postOwnerId),
         );
   function handlePostCardClick(event) {
     if (

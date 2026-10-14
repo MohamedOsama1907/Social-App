@@ -1,4 +1,5 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { UserContext } from "../../Components/Context/use.context";
 import axios from "axios";
 import { Calendar, Camera, UserRound, Bookmark, Users, Check } from "lucide-react";
@@ -167,25 +168,15 @@ async function getRelationshipUsers(token, relationships = []) {
 }
 
 export default function Profile() {
-  const [bookMarksPosts, setBookMarksPosts] = useState(null);
-  const [myPosts, setMyPosts] = useState(null);
-  const [bookmarksLoading, setBookmarksLoading] = useState(true);
-  const [myPostsLoading, setMyPostsLoading] = useState(true);
   const [uploadModal, setUploadModal] = useState(false);
-  const [followersUsers, setFollowersUsers] = useState([]);
-  const [followingUsers, setFollowingUsers] = useState([]);
-  const [followersLoading, setFollowersLoading] = useState(true);
-  const [followingLoading, setFollowingLoading] = useState(true);
   const { token, userInfo, userInfoLoading, setUserInfo } =
     useContext(UserContext);
+  const queryClient = useQueryClient();
   const userId = userInfo?.id ?? userInfo?._id;
   const {
-    bookmarks,
     bookmarksCount,
     cover,
     createdAt,
-    dateOfBirth,
-    email,
     followers,
     followersCount,
     following,
@@ -194,100 +185,56 @@ export default function Profile() {
     name,
     photo,
     username,
-    _id,
   } = userInfo || {};
-  const followingRef = useRef(following);
-  followingRef.current = following;
-  async function getBookMarks() {
-    setBookmarksLoading(true);
-    try {
-      const config = {
-        url: "https://route-posts.routemisr.com/users/bookmarks",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        method: "GET",
-      };
-      const { data } = await axios.request(config);
-      setBookMarksPosts(data.data.bookmarks);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setBookmarksLoading(false);
-    }
-  }
-  // get followers function
-  useEffect(() => {
-    let isCurrent = true;
-    async function loadFollowers() {
-      setFollowersLoading(true);
-      try {
-        const users = await getRelationshipUsers(token, followers ?? []);
-        if (isCurrent) setFollowersUsers(users);
-      } catch (error) {
-        console.log(error);
-        if (isCurrent) setFollowersUsers([]);
-      } finally {
-        if (isCurrent) setFollowersLoading(false);
-      }
-    }
-
-    if (token) loadFollowers();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [followers, token]);
-
-  // get following function
-  useEffect(() => {
-    let isCurrent = true;
-    async function loadFollowing() {
-      setFollowingLoading(true);
-      try {
-        const users = await getRelationshipUsers(
-          token,
-          followingRef.current ?? [],
-        );
-        if (isCurrent) setFollowingUsers(users);
-      } catch (error) {
-        console.log(error);
-        if (isCurrent) setFollowingUsers([]);
-      } finally {
-        if (isCurrent) setFollowingLoading(false);
-      }
-    }
-
-    if (token) loadFollowing();
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [token, userId]);
-
-  async function getMyPosts() {
-    setMyPostsLoading(true);
-    try {
-      const config = {
+  const { data: myPosts, isLoading: myPostsLoading } = useQuery({
+    queryKey: ["getMyPosts", userId, photo],
+    queryFn: async () => {
+      const { data } = await axios.request({
         url: `https://route-posts.routemisr.com/users/${userId}/posts`,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         method: "GET",
-      };
-      const { data } = await axios.request(config);
-      const posts = data.data.posts;
-      setMyPosts(posts);
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setMyPostsLoading(false);
-    }
+      });
+      return data.data.posts ?? [];
+    },
+    enabled: Boolean(token && userId),
+    refetchOnMount: false,
+  });
+  const { data: bookMarksPosts, isLoading: bookmarksLoading } = useQuery({
+    queryKey: ["getBookmarks", userId],
+    queryFn: async () => {
+      const { data } = await axios.request({
+        url: "https://route-posts.routemisr.com/users/bookmarks",
+        headers: { Authorization: `Bearer ${token}` },
+        method: "GET",
+      });
+      return data.data.bookmarks ?? [];
+    },
+    enabled: Boolean(token && userId),
+    refetchOnMount: false,
+  });
+  const { data: followersUsers = [], isLoading: followersLoading } = useQuery({
+    queryKey: ["getProfileFollowers", userId, followers],
+    queryFn: () => getRelationshipUsers(token, followers ?? []),
+    enabled: Boolean(token && userId),
+    refetchOnMount: false,
+  });
+  const { data: followingUsers = [], isLoading: followingLoading } = useQuery({
+    queryKey: ["getProfileFollowing", userId, following],
+    queryFn: () => getRelationshipUsers(token, following ?? []),
+    enabled: Boolean(token && userId),
+    refetchOnMount: false,
+  });
+  function getMyPosts() {
+    return queryClient.invalidateQueries({ queryKey: ["getMyPosts", userId] });
   }
   // i will replace it by tanStack library
   function updatePost(updatedPost, wasBookmarked) {
-    setMyPosts((posts) => updatePostInList(posts, updatedPost));
-    setBookMarksPosts((posts) => updateBookmarkList(posts, updatedPost));
+    queryClient.setQueriesData({ queryKey: ["getMyPosts", userId] }, (posts) =>
+      updatePostInList(posts, updatedPost),
+    );
+    queryClient.setQueryData(["getBookmarks", userId], (posts) =>
+      updateBookmarkList(posts, updatedPost),
+    );
 
     if (wasBookmarked !== updatedPost.bookmarked) {
       setUserInfo((currentUser) =>
@@ -306,8 +253,12 @@ export default function Profile() {
   }
 
   function removePost(deletedPost) {
-    setMyPosts((posts) => removePostFromList(posts, deletedPost));
-    setBookMarksPosts((posts) => removePostFromList(posts, deletedPost));
+    queryClient.setQueriesData({ queryKey: ["getMyPosts", userId] }, (posts) =>
+      removePostFromList(posts, deletedPost),
+    );
+    queryClient.setQueryData(["getBookmarks", userId], (posts) =>
+      removePostFromList(posts, deletedPost),
+    );
 
     if (deletedPost.bookmarked) {
       setUserInfo((currentUser) =>
@@ -325,13 +276,6 @@ export default function Profile() {
   }
   // upload profile photo function
 
-  useEffect(() => {
-    if (token && userId) getMyPosts();
-  }, [token, userId, userInfo.photo]);
-
-  useEffect(() => {
-    if (token) getBookMarks();
-  }, [token]);
   const joinDate = createdAt
     ? new Date(createdAt).toLocaleDateString("en-US", {
         month: "long",

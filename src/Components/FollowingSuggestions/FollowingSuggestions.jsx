@@ -11,13 +11,12 @@ import { useContext, useState } from "react";
 import axios from "axios";
 import { followUser, isUserFollowing } from "../UserServices/UserServices";
 import { Link } from "react-router";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export default function FollowingSuggestions() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState(() => new Set());
-  const [followingState, setFollowingState] = useState({});
   const { token, userInfo } = useContext(UserContext);
+  const queryClient = useQueryClient();
 
   function handleNextPage() {
     setCurrentPage((page) => page + 1);
@@ -27,47 +26,58 @@ export default function FollowingSuggestions() {
       setCurrentPage((page) => page - 1);
     }
   }
-  const { data: suggestionData } = useQuery({
+  const {
+    data: suggestionData,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["getFollowingSuggestions", currentPage, token],
     enabled: Boolean(token),
     refetchOnMount: false,
+    staleTime: 5 * 60 * 1000,
     queryFn: async () => {
-    const config = {
-      url: `https://route-posts.routemisr.com/users/suggestions?page=${currentPage}&limit=5`,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      method: "GET",
-    };
-    const { data } = await axios.request(config);
-    if (!data.success) throw new Error(data.message || "Could not load suggestions");
-    return data.data.suggestions;
+      const config = {
+        url: `https://route-posts.routemisr.com/users/suggestions?page=${currentPage}&limit=5`,
+        headers: { Authorization: `Bearer ${token}` },
+        method: "GET",
+      };
+      const { data } = await axios.request(config);
+      if (!data.success) {
+        throw new Error(data.message || "Could not load suggestions");
+      }
+      return data.data.suggestions ?? [];
     },
   });
-  const suggestions = (suggestionData ?? []).filter(
-    (person) => !dismissedSuggestionIds.has(String(person._id ?? person.id)),
-  );
 
   const followSuggestionMutation = useMutation({
     mutationFn: (personId) => followUser(token, personId),
     onSuccess: (data, personId) => {
       if (!data.success) return;
-      const currentlyFollowing = Boolean(followingState[personId]);
-      setFollowingState((prev) => ({
-        ...prev,
-        [personId]: Boolean(data.data.following ?? data.data.isFollowing ?? !currentlyFollowing),
-      }));
+      const isFollowing = Boolean(data.data.following ?? data.data.isFollowing);
+      queryClient.setQueryData(
+        ["getFollowingSuggestions", currentPage, token],
+        (previous) => previous?.map((person) =>
+          String(person._id ?? person.id) === String(personId)
+            ? { ...person, isFollowing }
+            : person,
+        ),
+      );
     },
   });
   function handleFollowUser(person) {
     followSuggestionMutation.mutate(person._id ?? person.id);
   }
   function handleDismissSuggestion(personId) {
-    setDismissedSuggestionIds((previous) => new Set(previous).add(String(personId)));
-    const currentSuggestion = suggestions.filter(
-      (person) => String(person._id ?? person.id) !== String(personId),
+    const suggestions = suggestionData ?? [];
+    queryClient.setQueryData(
+      ["getFollowingSuggestions", currentPage, token],
+      (previous) => previous?.filter(
+        (person) => String(person._id ?? person.id) !== String(personId),
+      ),
     );
-    if (currentSuggestion.length === 0) {
+    if (suggestions.length <= 1) {
       handleNextPage();
     }
   }
@@ -93,15 +103,27 @@ export default function FollowingSuggestions() {
       </header>
 
       <ul className="divide-y divide-[#eeeeec] px-4 sm:px-5">
-        {suggestionData ? (
-          suggestions.map((person) => {
+        {isPending ? (
+          <li className="flex items-center justify-center gap-2 px-2 py-4">
+            <LoaderCircle className="animate-spin" />
+            <p>loading suggestions ...</p>
+          </li>
+        ) : isError ? (
+          <li className="flex flex-col items-center gap-2 px-2 py-4 text-center">
+            <p className="text-sm text-[#c0393f]">{error.message}</p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="cursor-pointer text-xs font-semibold text-[#16161a] underline underline-offset-2">
+              Try again
+            </button>
+          </li>
+        ) : suggestionData?.length ? (
+          suggestionData.map((person) => {
             const personId = person._id ?? person.id;
-            const isFollowing =
-              typeof followingState[personId] === "boolean"
-                ? followingState[personId]
-                : Boolean(
-                    person.isFollowing ?? isUserFollowing(userInfo, personId),
-                  );
+            const isFollowing = Boolean(
+              person.isFollowing ?? isUserFollowing(userInfo, personId),
+            );
 
             return (
               <li
@@ -151,6 +173,7 @@ export default function FollowingSuggestions() {
                   <button
                     onClick={() => handleFollowUser(person)}
                     type="button"
+                    disabled={followSuggestionMutation.isPending && String(followSuggestionMutation.variables) === String(personId)}
                     aria-label={`Follow ${person.name}`}
                     aria-pressed={isFollowing}
                     className={`inline-flex h-8 cursor-pointer items-center justify-center gap-1 rounded-lg border px-2.5 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16161a]/30 focus-visible:ring-offset-2 sm:h-9 sm:gap-1.5 sm:px-3 sm:text-xs ${
@@ -177,12 +200,9 @@ export default function FollowingSuggestions() {
             );
           })
         ) : (
-          <>
-            <div className="mx-auto flex items-center justify-center gap-2 px-2 py-4">
-              <LoaderCircle className="animate-spin" />
-              <p>loading suggestions ...</p>
-            </div>
-          </>
+          <li className="px-2 py-4 text-center text-sm text-[#707078]">
+            No suggestions available.
+          </li>
         )}
       </ul>
 
