@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Social Media App
 
 A modern, responsive social media application built with React, designed to provide a smooth and interactive social networking experience. Users can create posts, share images, interact with other users, manage their profiles, and communicate through comments and replies.
@@ -291,4 +291,4 @@ Computer & Systems Engineering Student | Front-End Developer
 ---
 
 If you find this project interesting, feel free to explore the repository and check out the live demo.
->>>>>>> 391e36e19f1c89bfcc92d4c0624cdafabc77f08a
+
