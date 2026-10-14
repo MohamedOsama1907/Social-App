@@ -230,6 +230,10 @@ export default function PostDetails() {
     setPost(updatedPost);
   }
 
+  function handlePostDelete() {
+    window.setTimeout(() => navigate("/"), 1000);
+  }
+
   async function getPost() {
     setLoading(true);
     setError(false);
@@ -446,6 +450,7 @@ export default function PostDetails() {
             <PostCard
               post={post}
               onPostUpdate={handlePostUpdate}
+              onPostDelete={handlePostDelete}
               showTopComment={false}
             />
           </div>

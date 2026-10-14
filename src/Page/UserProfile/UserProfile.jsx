@@ -1,5 +1,6 @@
 import { Calendar, UserRound, Mail, Users, Check } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router";
 import { Link } from "react-router";
 import { UserContext } from "../../Components/Context/use.context";
@@ -13,31 +14,40 @@ import { Helmet } from "react-helmet-async";
 export default function UserProfile() {
   const { id } = useParams();
   const { token, userInfo } = useContext(UserContext);
-  const [user, setUser] = useState(null);
-  const [isFollowing, setIsFollowing] = useState(false);
+  const queryClient = useQueryClient();
+  const [followState, setIsFollowing] = useState(false);
+  const { data: profileData, isLoading } = useQuery({
+    queryKey: ["getUserProfile", id],
+    queryFn: () => getUserProfile(token, id),
+    enabled: Boolean(token && id),
+    refetchOnMount: false,
+  });
+  const user = profileData?.data?.user ?? null;
+  const isFollowing = Boolean(profileData?.data?.isFollowing ?? followState);
   const currentProfilePath =
     (user?._id ?? user?.id) === (userInfo?._id ?? userInfo?.id)
       ? "/my-profile"
       : `/profile/${user?._id ?? user?.id ?? id}`;
-  async function handleUserProfile() {
-    const data = await getUserProfile(token, id);
-    if (data.success) {
-      setUser(data.data.user);
-      setIsFollowing(data.data.isFollowing);
-    }
-  }
-  useEffect(() => {
-    handleUserProfile();
-  }, [id, token]);
-
-  async function handleFollowing() {
-    const data = await followUser(token, id);
-    if (data.success) {
-      setIsFollowing(Boolean(data.data.isFollowing ?? data.data.following));
-      await handleUserProfile(); // Refresh user profile to get updated followers count and following state
-    }
-  }
-  if (!user) {
+  const followUserMutation = useMutation({
+    mutationFn: () => followUser(token, id),
+    onSuccess: (data) => {
+      if (!data.success) return;
+      const nextIsFollowing = Boolean(data.data.isFollowing ?? data.data.following);
+      setIsFollowing(nextIsFollowing);
+      queryClient.setQueryData(["getUserProfile", id], (previous) => previous ? ({
+        ...previous,
+        data: {
+          ...previous.data,
+          isFollowing: nextIsFollowing,
+          user: {
+            ...previous.data.user,
+            followersCount: Math.max(0, (previous.data.user.followersCount ?? 0) + (nextIsFollowing ? 1 : -1)),
+          },
+        },
+      }) : previous);
+    },
+  });
+  if (isLoading || !user) {
     return (
       <>
         <Helmet>
@@ -112,8 +122,9 @@ export default function UserProfile() {
 
             <button
               onClick={() => {
-                handleFollowing();
+                followUserMutation.mutate();
               }}
+              disabled={followUserMutation.isPending}
               type="button"
               aria-pressed={isFollowing}
               aria-label={`${isFollowing ? "Unfollow" : "Follow"} ${user.name}`}

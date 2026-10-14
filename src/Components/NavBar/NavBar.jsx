@@ -151,95 +151,100 @@ export default function NavBar() {
           </li>
         </ul>
 
-        {/* Account: avatar trigger + flyout menu */}
-        <div className="relative shrink-0" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setMenuOpen((prev) => !prev)}
-            aria-expanded={menuOpen}
-            aria-haspopup="true"
-            aria-label="Account menu"
-            className={`flex items-center justify-center rounded-full transition-colors duration-150 cursor-pointer ${
-              menuOpen ? "ring-2 ring-[#16161a]/15" : ""
-            }`}>
-            <div className="w-9 h-9 rounded-full bg-[#eeeeec] border border-[#16161a]/10 flex items-center justify-center text-xs font-semibold text-[#16161a] shrink-0 overflow-hidden">
-              <img
-                loading="lazy"
-                src={
-                  userInfo?.photo ||
-                  "https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png"
-                }
-                alt={
-                  userInfo?.name
-                    ? `${userInfo.name}'s profile image`
-                    : "Profile image"
-                }
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </button>
-          {!menuOpen && <span className="toolTip">Account</span>}
+        <div className="">
+          <div className="togleMode">
+            
+          </div>
+          {/* Account: avatar trigger + flyout menu */}
+          <div className="relative shrink-0" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setMenuOpen((prev) => !prev)}
+              aria-expanded={menuOpen}
+              aria-haspopup="true"
+              aria-label="Account menu"
+              className={`flex items-center justify-center rounded-full transition-colors duration-150 cursor-pointer ${
+                menuOpen ? "ring-2 ring-[#16161a]/15" : ""
+              }`}>
+              <div className="w-9 h-9 rounded-full bg-[#eeeeec] border border-[#16161a]/10 flex items-center justify-center text-xs font-semibold text-[#16161a] shrink-0 overflow-hidden">
+                <img
+                  loading="lazy"
+                  src={
+                    userInfo?.photo ||
+                    "https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png"
+                  }
+                  alt={
+                    userInfo?.name
+                      ? `${userInfo.name}'s profile image`
+                      : "Profile image"
+                  }
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </button>
+            {!menuOpen && <span className="toolTip">Account</span>}
 
-          {/* Flyout menu — opens below the avatar */}
-          {menuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-[#16161a]/10 bg-white shadow-[0_1px_2px_rgba(15,15,16,0.04),0_16px_40px_-12px_rgba(15,15,16,0.18)] overflow-hidden">
-              {/* User summary */}
-              <Link to={`/my-profile`}>
-                <div
-                  className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-200"
-                  onClick={() => setMenuOpen(false)}>
-                  <div className="w-9 h-9 rounded-full bg-[#eeeeec] border border-[#16161a]/10 flex items-center justify-center text-xs font-semibold text-[#16161a] shrink-0 overflow-hidden">
-                    <img
-                      loading="lazy"
-                      src={
-                        userInfo?.photo ||
-                        "https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png"
-                      }
-                      alt={
-                        userInfo?.name
-                          ? `${userInfo.name}'s profile image`
-                          : "Profile image"
-                      }
-                      className="w-full h-full object-cover"
-                    />
+            {/* Flyout menu — opens below the avatar */}
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-[#16161a]/10 bg-white shadow-[0_1px_2px_rgba(15,15,16,0.04),0_16px_40px_-12px_rgba(15,15,16,0.18)] overflow-hidden">
+                {/* User summary */}
+                <Link to={`/my-profile`}>
+                  <div
+                    className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-200"
+                    onClick={() => setMenuOpen(false)}>
+                    <div className="w-9 h-9 rounded-full bg-[#eeeeec] border border-[#16161a]/10 flex items-center justify-center text-xs font-semibold text-[#16161a] shrink-0 overflow-hidden">
+                      <img
+                        loading="lazy"
+                        src={
+                          userInfo?.photo ||
+                          "https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png"
+                        }
+                        alt={
+                          userInfo?.name
+                            ? `${userInfo.name}'s profile image`
+                            : "Profile image"
+                        }
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-semibold text-[#16161a] truncate">
+                        {userInfo?.name || "Your account"}
+                      </p>
+                      <p className="text-xs text-[#9a9ba1] truncate">
+                        {userInfo?.username ? `@${userInfo.username}` : ""}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-semibold text-[#16161a] truncate">
-                      {userInfo?.name || "Your account"}
-                    </p>
-                    <p className="text-xs text-[#9a9ba1] truncate">
-                      {userInfo?.username ? `@${userInfo.username}` : ""}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-
-              {/* Menu items */}
-              <div className="py-1.5">
-                <Link
-                  to={"/my-profile"}
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[#16161a] hover:bg-[#f2f2f1] transition-colors duration-150">
-                  <CircleUserRound size={20} className="text-[#6b6c72]" />
-                  Profile
                 </Link>
-              </div>
 
-              {/* Logout — visually separated */}
-              <div className="border-t border-gray-200 py-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    logOut();
-                  }}
-                  className="logoutBtn border-0 rounded-0 cursor-pointer flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium text-[#c0393f] hover:bg-[#fbecec] transition-colors duration-150">
-                  <LogOut size={18} className="shrink-0" />
-                  Logout
-                </button>
+                {/* Menu items */}
+                <div className="py-1.5">
+                  <Link
+                    to={"/my-profile"}
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-[#16161a] hover:bg-[#f2f2f1] transition-colors duration-150">
+                    <CircleUserRound size={20} className="text-[#6b6c72]" />
+                    Profile
+                  </Link>
+                </div>
+
+                {/* Logout — visually separated */}
+                <div className="border-t border-gray-200 py-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      logOut();
+                    }}
+                    className="logoutBtn border-0 rounded-0 cursor-pointer flex w-full items-center gap-3 px-4 py-2.5 text-sm font-medium text-[#c0393f] hover:bg-[#fbecec] transition-colors duration-150">
+                    <LogOut size={18} className="shrink-0" />
+                    Logout
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </header>
 

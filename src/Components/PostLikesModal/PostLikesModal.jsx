@@ -1,37 +1,48 @@
 import { X, Heart, UserRound, LoaderCircle, ChevronRight } from "lucide-react";
 import { UserContext } from "../Context/use.context";
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import { Link } from "react-router";
 import axios from "axios";
+import { useInfiniteQuery } from "@tanstack/react-query";
+
+const LIKES_LIMIT = 7;
 
 export default function PostLikesModal({ post, setIsLikeModalOpen }) {
   const { token, userInfo } = useContext(UserContext);
-  const [postLikes, setPostLikes] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  async function getPostLikes() {
-    try {
+  const {
+    data,
+    isPending,
+    isError,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["getPostLikes", post._id ?? post.id, token],
+    enabled: Boolean(token && (post._id ?? post.id)),
+    initialPageParam: 1,
+    refetchOnMount: false,
+    queryFn: async ({ pageParam }) => {
       const config = {
-        url: `https://route-posts.routemisr.com/posts/${post._id}/likes?page=${currentPage}&limit=6`,
+        url: `https://route-posts.routemisr.com/posts/${post._id ?? post.id}/likes?page=${pageParam}&limit=${LIKES_LIMIT}`,
         headers: {
           Authorization: `Bearer ${token}`,
         },
         method: "GET",
       };
       const { data } = await axios.request(config);
-      if (data.success) {
-        if (currentPage === 1) {
-          setPostLikes(data.data.likes);
-        } else {
-          setPostLikes((prev) => [...prev, ...data.data.likes]);
-        }
+      if (!data.success) throw new Error(data.message || "Could not load likes");
+      return data.data.likes ?? [];
+    },
+    getNextPageParam: (lastPage, pages) => {
+      const loadedLikes = pages.reduce((total, page) => total + page.length, 0);
+      const likesCount = Number(post.likesCount);
+      if (post.likesCount != null && Number.isFinite(likesCount)) {
+        return loadedLikes < likesCount ? pages.length + 1 : undefined;
       }
-    } catch (error) {
-      console.log({ error });
-    }
-  }
-  useEffect(() => {
-    getPostLikes();
-  }, [post._id, currentPage]);
+      return lastPage.length === LIKES_LIMIT ? pages.length + 1 : undefined;
+    },
+  });
+  const postLikes = data?.pages.flat() ?? [];
 
   function onClose(event) {
     if (event.target === event.currentTarget) {
@@ -78,8 +89,8 @@ export default function PostLikesModal({ post, setIsLikeModalOpen }) {
         </header>
 
         {/* Users */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2 sm:px-4 sm:py-3">
-          {postLikes === null ? (
+        <div className="max-h-[min(60dvh,480px)] min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-2 sm:px-4 sm:py-3">
+          {isPending ? (
             <div
               className="flex min-h-44 flex-col items-center justify-center gap-4 px-4"
               role="status"
@@ -97,6 +108,10 @@ export default function PostLikesModal({ post, setIsLikeModalOpen }) {
                 ))}
               </div>
             </div>
+          ) : isError ? (
+            <p className="flex min-h-44 items-center justify-center px-6 text-center text-sm text-[#c0393f]" role="alert">
+              Could not load likes. Please close and reopen this list to try again.
+            </p>
           ) : postLikes.length === 0 ? (
             <div className="flex min-h-52 flex-col items-center justify-center px-6 py-8 text-center">
               <span className="mb-3 grid size-12 place-items-center rounded-full bg-[#f5f1f2] text-[#707078]">
@@ -148,13 +163,16 @@ export default function PostLikesModal({ post, setIsLikeModalOpen }) {
           )}
         </div>
 
-        {postLikes?.length > 6 && (
-          <footer
-            className="cursor-pointer border-t border-[#eeeeec] bg-[#fcfcfb] px-4 py-3 text-center text-[11px] text-[#929298] sm:px-6 sm:text-xs"
-            onClick={() => {
-              setCurrentPage((prev) => prev + 1);
-            }}>
-            Show more
+        {hasNextPage && (
+          <footer className="border-t border-[#eeeeec] bg-[#fcfcfb] px-4 py-3 text-center sm:px-6">
+            <button
+              type="button"
+              disabled={isFetchingNextPage}
+              onClick={() => fetchNextPage()}
+              className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-2 rounded-lg px-4 text-xs font-semibold text-[#424249] transition-colors hover:bg-[#f2f2f1] disabled:cursor-wait disabled:opacity-60">
+              {isFetchingNextPage && <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />}
+              {isFetchingNextPage ? "Loading…" : "Show more"}
+            </button>
           </footer>
         )}
       </div>

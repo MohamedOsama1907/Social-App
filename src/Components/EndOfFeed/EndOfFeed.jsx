@@ -56,9 +56,7 @@ export default function EndOfFeed({ onKeepScrolling }) {
       <div className="mt-6 flex flex-col justify-center gap-2.5 sm:flex-row">
         <button
           type="button"
-          onClick={() => {
-            onKeepScrolling((prev) => prev + 1);
-          }}
+          onClick={onKeepScrolling}
           className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#16161a] px-5 text-sm font-semibold  shadow-[0_6px_16px_rgba(41,36,58,0.16)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_9px_20px_rgba(41,36,58,0.2)] focus:outline-none focus:ring-4 focus:ring-violet-900/15 active:translate-y-0 border-[#16161a] bg-[#16161a] text-white hover:bg-[#303036]">
           Keep scrolling
           <ArrowRight size={16} aria-hidden="true" />

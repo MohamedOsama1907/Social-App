@@ -1,7 +1,9 @@
-import { X, Globe2, ChevronDown, Share2 } from "lucide-react";
+import { X, Globe2, Share2 } from "lucide-react";
 import axios from "axios";
 import { toast } from "sonner";
 import { useContext } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
 import { UserContext } from "../Context/use.context";
 import { useFormik } from "formik";
 import * as yup from "yup";
@@ -19,8 +21,26 @@ export default function SharePostModal({
     !post ||
     !currentUserId ||
     !postOwnerId ||
-    String(currentUserId) === String(postOwnerId) ||
-    Boolean(post.isShare);
+    String(currentUserId) === String(postOwnerId);
+  const sharedPostId =
+    post?.sharedPost?._id ?? post?.sharedPost?.id ?? post?._id ?? post?.id;
+  const sharePostMutation = useMutation({
+    mutationFn: async (values) => {
+      const shareBody = values.body?.trim();
+      const sharePayload = shareBody ? { body: shareBody } : {};
+      const config = {
+        url: `https://route-posts.routemisr.com/posts/${sharedPostId}/share`,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        method: "POST",
+        data: sharePayload,
+      };
+      const { data } = await axios.request(config);
+      return data;
+    },
+  });
   const schema = yup.object({
     body: yup.string().nullable(),
   });
@@ -34,25 +54,18 @@ export default function SharePostModal({
         if (cannotSharePost) return;
 
         try {
-          const config = {
-            url: `https://route-posts.routemisr.com/posts/${post._id}/share`,
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            method: "POST",
-            data: values,
-          };
-          const { data } = await axios.request(config);
+          const data = await sharePostMutation.mutateAsync(values);
           if (data.success) {
             toast.success(data.message);
             setIsShareModalOpen(false);
             onPostShared?.();
           }
         } catch (error) {
-          if (error.response.data.message === "Post already shared") {
-            return;
-          }
+          toast.error(
+            error.response?.data?.message ||
+              error.message ||
+              "Could not share this post. Please try again.",
+          );
         }
       },
     });
@@ -61,7 +74,7 @@ export default function SharePostModal({
       setIsShareModalOpen(false);
     }
   }
-  return (
+  return createPortal(
     // Backdrop
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-[#16161a]/40 px-3 py-4 sm:px-4 sm:py-20"
@@ -98,7 +111,8 @@ export default function SharePostModal({
           <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5">
             {/* Current user + textarea */}
             <div className="flex items-start gap-3 sm:gap-3.5">
-              <img loading="lazy"
+              <img
+                loading="lazy"
                 src={userInfo.photo}
                 alt={`${userInfo.name}'s profile`}
                 className="size-10 shrink-0 rounded-full object-contain sm:size-11"
@@ -130,7 +144,8 @@ export default function SharePostModal({
             {/* Original post preview */}
             <div className="mt-4 overflow-hidden rounded-xl border border-[#e8e8e6] bg-[#fafaf9]">
               <div className="flex items-center gap-2.5 px-3.5 py-3 sm:px-4">
-                <img loading="lazy"
+                <img
+                  loading="lazy"
                   src={post.user.photo}
                   alt={`${post.user.name}'s profile`}
                   className="size-8 shrink-0 rounded-full object-cover bg-[#f2f2f1]"
@@ -157,7 +172,8 @@ export default function SharePostModal({
                 </p>
               )}
               {post.image && (
-                <img loading="lazy"
+                <img
+                  loading="lazy"
                   src={post.image}
                   alt={`Post shared by ${post.user.name}`}
                   className="block h-auto max-h-80 w-full object-contain"
@@ -166,7 +182,8 @@ export default function SharePostModal({
               {post.sharedPost && (
                 <div className="mx-4 mb-5 overflow-hidden rounded-xl border border-[#e8e8e6] bg-[#fafaf9] sm:mx-6 lg:mx-7">
                   <div className="flex items-center gap-2.5 px-3.5 py-3 sm:px-4">
-                    <img loading="lazy"
+                    <img
+                      loading="lazy"
                       src={post.sharedPost.user.photo}
                       alt={`${post.sharedPost.user.name}'s profile`}
                       className="size-8 shrink-0 rounded-full object-cover bg-[#f2f2f1]"
@@ -181,7 +198,9 @@ export default function SharePostModal({
                         </span>
                       </div>
                       <div className="flex items-center gap-1 text-[11px] text-[#929298] sm:text-xs">
-                        <span>{formatRelativePostTime(post.sharedPost.createdAt)}</span>
+                        <span>
+                          {formatRelativePostTime(post.sharedPost.createdAt)}
+                        </span>
                         <span aria-hidden="true">·</span>
                         <Globe2 className="size-3" aria-hidden="true" />
                         <span>{post.sharedPost.privacy}</span>
@@ -196,7 +215,8 @@ export default function SharePostModal({
                   )}
 
                   {post.sharedPost.image && (
-                    <img loading="lazy"
+                    <img
+                      loading="lazy"
                       src={post.sharedPost.image}
                       alt={`Shared post by ${post.sharedPost.user.name}`}
                       className="block max-h-105 w-full object-contain"
@@ -224,6 +244,7 @@ export default function SharePostModal({
           </footer>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

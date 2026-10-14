@@ -6,6 +6,7 @@ import * as yup from "yup";
 import axios from "axios";
 import { toast } from "sonner";
 import { UserContext } from "../Context/use.context";
+import { useMutation } from "@tanstack/react-query";
 
 const DEFAULT_PROFILE_PHOTO =
   "https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png";
@@ -17,6 +18,17 @@ export default function CreateReplyComment({
   onReplyCreated,
 }) {
   const { token, userInfo } = useContext(UserContext);
+  const createReplyMutation = useMutation({
+    mutationFn: async (formData) => {
+      const { data } = await axios.request({
+        url: `https://route-posts.routemisr.com/posts/${postId}/comments/${commentId}/replies`,
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        data: formData,
+      });
+      return data;
+    },
+  });
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -57,12 +69,7 @@ export default function CreateReplyComment({
         if (values.content) formData.append("content", values.content);
         if (values.image) formData.append("image", values.image);
 
-        const { data } = await axios.request({
-          url: `https://route-posts.routemisr.com/posts/${postId}/comments/${commentId}/replies`,
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          data: formData,
-        });
+        const data = await createReplyMutation.mutateAsync(formData);
         if (data.success) {
           toast.success(data.message || "Reply added successfully");
           await onReplyCreated?.();

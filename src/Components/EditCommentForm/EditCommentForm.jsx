@@ -6,6 +6,7 @@ import axios from "axios";
 import { toast } from "sonner";
 import { useContext } from "react";
 import { UserContext } from "../Context/use.context";
+import { useMutation } from "@tanstack/react-query";
 
 export default function EditCommentForm({
   postId,
@@ -14,6 +15,17 @@ export default function EditCommentForm({
   onUpdated,
 }) {
   const { token } = useContext(UserContext);
+  const editCommentMutation = useMutation({
+    mutationFn: async (formData) => {
+      const { data } = await axios.request({
+        url: `https://route-posts.routemisr.com/posts/${postId}/comments/${comment._id ?? comment.id}`,
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        data: formData,
+      });
+      return data;
+    },
+  });
   const [imagePreview, setImagePreview] = useState(comment.image || null);
   const [imageRemoved, setImageRemoved] = useState(false);
   const fileInputRef = useRef(null);
@@ -76,12 +88,7 @@ export default function EditCommentForm({
         }
         if (values.image) formData.append("image", values.image);
 
-        const { data } = await axios.request({
-          url: `https://route-posts.routemisr.com/posts/${postId}/comments/${comment._id ?? comment.id}`,
-          method: "PUT",
-          headers: { Authorization: `Bearer ${token}` },
-          data: formData,
-        });
+        const data = await editCommentMutation.mutateAsync(formData);
 
         if (!data?.success) {
           throw new Error(data?.message || "Could not update the comment.");

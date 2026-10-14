@@ -12,6 +12,7 @@ import {
   Trash2,
   UserPlus,
 } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { UserContext } from "../Context/use.context";
 import { useContext, useEffect, useRef, useState } from "react";
 import axios from "axios";
@@ -25,8 +26,8 @@ import {
   getUserProfile,
   isUserFollowing,
 } from "../UserServices/UserServices";
-import { Link } from "react-router";
-import { formatRelativePostTime } from "../../lib/utils";
+import { Link, useNavigate } from "react-router";
+import { formatRelativePostTime, updatePostInList, removePostFromList } from "../../lib/utils";
 // import { followUser } from "../UserServices/UserServices";
 //* post card component
 export default function PostCard({
@@ -35,12 +36,14 @@ export default function PostCard({
   onPostDelete,
   showTopComment,
 }) {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { token, userInfo } = useContext(UserContext);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isLikeModalOpen, setIsLikeModalOpen] = useState(false);
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
   const [isEditModal, setIsEditModal] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [followingOverride, setFollowingOverride] = useState(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isEditingTopComment, setIsEditingTopComment] = useState(false);
   const [isTopCommentMenuOpen, setIsTopCommentMenuOpen] = useState(false);
@@ -52,10 +55,42 @@ export default function PostCard({
     return personId === currentUserId ? "/my-profile" : `/profile/${personId}`;
   };
   const postOwnerId = post.user?._id ?? post.user?.id;
+  const { data: followingData } = useQuery({
+    queryKey: ["getUserProfile", postOwnerId],
+    queryFn: () => getUserProfile(token, postOwnerId),
+    enabled: Boolean(token && postOwnerId),
+    refetchOnMount: false,
+  });
   const isOwnPost =
     Boolean(currentUserId && postOwnerId) &&
     String(currentUserId) === String(postOwnerId);
-  const cannotSharePost = isOwnPost || Boolean(post.isShare);
+  const cannotSharePost = isOwnPost;
+  const isFollowing =
+    followingOverride?.userId === String(postOwnerId)
+      ? followingOverride.value
+      : Boolean(
+          followingData?.success
+            ? followingData.data.isFollowing ?? isUserFollowing(userInfo, postOwnerId)
+            : isUserFollowing(userInfo, postOwnerId),
+        );
+  function handlePostCardClick(event) {
+    if (
+      event.target.closest(
+        "a, button, input, textarea, select, [role='menu'], [data-post-card-action]",
+      )
+    ) {
+      return;
+    }
+
+    const postId = post._id ?? post.id;
+    if (postId) navigate(`/posts/postDetails/${postId}`);
+  }
+  function handleSharedPostClick(event) {
+    if (event.target.closest("a, button")) return;
+    event.stopPropagation();
+    const sharedPostId = post.sharedPost?._id ?? post.sharedPost?.id;
+    if (sharedPostId) navigate(`/posts/postDetails/${sharedPostId}`);
+  }
   function notifyPostUpdate(changes) {
     onPostUpdate?.({ ...post, ...changes }, post.bookmarked);
   }
@@ -81,8 +116,16 @@ export default function PostCard({
       setIsActionsMenuOpen(false);
     }
   }
-  async function requestPostAction(action, changes) {
-    try {
+  function updateCachedPost(updatedPost) {
+    queryClient.setQueryData(["getAllPosts"], (oldData) => {
+      if (!oldData) return oldData;
+      return { ...oldData, pages: oldData.pages.map((posts) => updatePostInList(posts, updatedPost)) };
+    });
+    onPostUpdate?.(updatedPost, updatedPost.bookmarked);
+  }
+
+  const likeMutation = useMutation({
+    mutationFn: async ({ action, changes }) => {
       const config = {
         url: `https://route-posts.routemisr.com/posts/${post._id}/${action}`,
         headers: {
@@ -91,73 +134,82 @@ export default function PostCard({
         method: "PUT",
       };
       const { data } = await axios.request(config);
-      if (data.success) {
-        notifyPostUpdate(changes);
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }
+      if (!data.success) throw new Error(data.message || "Could not update post");
+      return { changes, data };
+    },
+    onSuccess: ({ changes }) => updateCachedPost({ ...post, ...changes }),
+    onError: (error) => console.log(error),
+  });
 
-  async function handleLike() {
+  const bookmarkMutation = useMutation({
+    mutationFn: async (changes) => {
+      const { data } = await axios.request({
+        url: `https://route-posts.routemisr.com/posts/${post._id}/bookmark`,
+        headers: { Authorization: `Bearer ${token}` },
+        method: "PUT",
+      });
+      if (!data.success) throw new Error(data.message || "Could not update bookmark");
+      return changes;
+    },
+    onSuccess: (changes) => {
+      const updatedPost = { ...post, ...changes };
+      updateCachedPost(updatedPost);
+    },
+    onError: (error) => console.log(error),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const { data } = await axios.request({
+        url: `https://route-posts.routemisr.com/posts/${post._id}`,
+        headers: { Authorization: `Bearer ${token}` },
+        method: "DELETE",
+      });
+      if (!data.success) throw new Error(data.message || "Could not delete post");
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.setQueryData(["getAllPosts"], (oldData) => oldData ? ({
+        ...oldData,
+        pages: oldData.pages.map((posts) => removePostFromList(posts, post)),
+      }) : oldData);
+      onPostDelete?.(post);
+    },
+  });
+
+  const followMutation = useMutation({
+    mutationFn: () => followUser(token, postOwnerId),
+    onSuccess: (data) => {
+      if (!data.success) throw new Error(data.message || "Could not update follow status");
+      setFollowingOverride({
+        userId: String(postOwnerId),
+        value: Boolean(data.data.following ?? data.data.isFollowing),
+      });
+    },
+    onError: (error) => console.log(error),
+  });
+
+  function handleLike() {
     const userId = userInfo?._id;
     if (!userId) return;
 
     const likes = post.likes ?? [];
     const wasLiked = likes.includes(userId);
-    await requestPostAction("like", {
+    likeMutation.mutate({ action: "like", changes: {
       likes: wasLiked
         ? likes.filter((likedUserId) => likedUserId !== userId)
         : [...likes, userId],
       likesCount: Math.max(0, (post.likesCount ?? 0) + (wasLiked ? -1 : 1)),
-    });
+    } });
   }
 
-  async function handleBookMark() {
-    await requestPostAction("bookmark", {
-      bookmarked: !post.bookmarked,
-    });
+  function handleBookMark() {
+    bookmarkMutation.mutate({ bookmarked: !post.bookmarked });
   }
-  async function handleDelete() {
-    try {
-      const config = {
-        url: `https://route-posts.routemisr.com/posts/${post._id}`,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        method: "DELETE",
-      };
-      const { data } = await axios.request(config);
-      if (data.success) {
-        toast.success(data.message);
-        onPostDelete?.(post);
-      }
-    } catch (error) {
-      console.log(error);
-    }
+  function handleDelete() {
+    deleteMutation.mutate();
   }
-  async function handleFollowing() {
-    const data = await followUser(token, postOwnerId);
-    if (data.success) {
-      setIsFollowing(Boolean(data.data.following ?? data.data.isFollowing));
-    }
-  }
-  async function handleFollowingState() {
-    const data = await getUserProfile(token, postOwnerId);
-    if (data.success) {
-      setIsFollowing(
-        Boolean(
-          data.data.isFollowing ?? isUserFollowing(userInfo, postOwnerId),
-        ),
-      );
-    } else {
-      setIsFollowing(isUserFollowing(userInfo, postOwnerId));
-    }
-  }
-  useEffect(() => {
-    setIsFollowing(isUserFollowing(userInfo, postOwnerId));
-    handleFollowingState();
-  }, [token, postOwnerId, userInfo?.following]);
   useEffect(
     () => () => {
       if (topCommentImageUrl.current) {
@@ -191,7 +243,8 @@ export default function PostCard({
     <div className="w-full mx-auto" onClick={onClose}>
       <article
         id={`post-${post._id}`}
-        className="mx-auto w-full rounded-2xl border border-[#e8e8e6] bg-white shadow-[0_8px_24px_rgba(22,22,26,0.06)]">
+        onClick={handlePostCardClick}
+        className="mx-auto w-full cursor-pointer rounded-2xl border border-[#e8e8e6] bg-white shadow-[0_8px_24px_rgba(22,22,26,0.06)]">
         <header className="flex items-start justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5 lg:px-7">
           <div className="flex min-w-0 items-center gap-3">
             <Link to={profilePath(post.user)} className="shrink-0">
@@ -218,7 +271,8 @@ export default function PostCard({
                 <div>
                   {!isOwnPost && (
                     <button
-                      onClick={handleFollowing}
+                      onClick={() => followMutation.mutate()}
+                      disabled={followMutation.isPending}
                       type="button"
                       aria-label={`${isFollowing ? "Unfollow" : "Follow"} ${post.user.name}`}
                       aria-pressed={isFollowing}
@@ -287,6 +341,7 @@ export default function PostCard({
                     setIsActionsMenuOpen(false);
                     handleBookMark();
                   }}
+                    disabled={bookmarkMutation.isPending}
                   className="cursor-pointer flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-[#29292d] transition-colors hover:bg-[#f7f7f6]">
                   <Bookmark
                     className={`size-4 text-[#707078] ${post.bookmarked ? "fill-current" : ""}`}
@@ -315,6 +370,7 @@ export default function PostCard({
                         setIsActionsMenuOpen(false);
                         handleDelete();
                       }}
+                    disabled={deleteMutation.isPending}
                       className="cursor-pointer flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-[#c0393f] transition-colors hover:bg-[#fbecec]">
                       <Trash2 className="size-4" aria-hidden="true" />
                       <span>Delete post</span>
@@ -351,7 +407,9 @@ export default function PostCard({
           )}
         </Link>
         {post.sharedPost && (
-          <div className="mx-4 mb-5 overflow-hidden rounded-xl border border-[#e8e8e6] bg-[#fafaf9] sm:mx-6 lg:mx-7">
+          <div
+            onClick={handleSharedPostClick}
+            className="mx-4 mb-5 cursor-pointer overflow-hidden rounded-xl border border-[#e8e8e6] bg-[#fafaf9] sm:mx-6 lg:mx-7">
             <div className="flex items-center gap-2.5 px-3.5 py-3 sm:px-4">
               <Link to={profilePath(post.sharedPost.user)} className="shrink-0">
                 <img
@@ -404,6 +462,7 @@ export default function PostCard({
         <footer className="px-4 py-4 sm:px-6 lg:px-7">
           <div className="flex items-center justify-between border-b border-[#eeeeec] pb-3 text-xs text-[#707078] sm:text-sm">
             <span
+              data-post-card-action
               className="cursor-pointer"
               onClick={() => {
                 setIsLikeModalOpen(true);
@@ -421,9 +480,8 @@ export default function PostCard({
 
           <div className="grid grid-cols-4 gap-0 pt-2 text-[10px] font-medium text-[#707078] sm:gap-1 sm:text-sm">
             <button
-              onClick={() => {
-                handleLike();
-              }}
+              onClick={handleLike}
+              disabled={likeMutation.isPending}
               type="button"
               className={`flex min-w-0 cursor-pointer items-center justify-center gap-1 rounded-lg py-2 transition-colors duration-150 hover:text-[#F33E58] sm:gap-2 ${post.likes.includes(userInfo?._id) ? "text-[#F33E58]" : ""}`}>
               <Heart
@@ -451,18 +509,17 @@ export default function PostCard({
               title={
                 isOwnPost
                   ? "You can’t share your own post"
-                  : post.isShare
-                    ? "You’ve already shared this post"
-                    : "Share post"
+                  : "Share post"
               }
               className={`flex min-w-0 items-center justify-center gap-1 rounded-lg py-2 transition-colors duration-150 sm:gap-2 ${cannotSharePost ? "cursor-not-allowed text-[#929298]" : "cursor-pointer text-[#707078] hover:text-[#16161a]"}`}>
               <Repeat2 className="size-3.5 shrink-0 sm:size-4" aria-hidden="true" />
               <span className="whitespace-nowrap">
-                {isOwnPost ? "Your post" : post.isShare ? "Shared" : "Share"}
+                {isOwnPost ? "Your post" : "Share"}
               </span>
             </button>
             <button
               onClick={handleBookMark}
+              disabled={bookmarkMutation.isPending}
               type="button"
               aria-label={post.bookmarked ? "Remove saved post" : "Save post"}
               aria-pressed={Boolean(post.bookmarked)}
@@ -618,7 +675,16 @@ export default function PostCard({
         <PostLikesModal post={post} setIsLikeModalOpen={setIsLikeModalOpen} />
       )}
       {isEditModal && (
-        <EditPostModal post={post} setIsEditModal={setIsEditModal} />
+        <EditPostModal
+          post={post}
+          setIsEditModal={setIsEditModal}
+          onPostUpdated={(data) => {
+            const updatedPost = data?.data?.post ?? data?.data ?? data;
+            if (updatedPost && (updatedPost._id ?? updatedPost.id)) {
+              updateCachedPost(updatedPost);
+            }
+          }}
+        />
       )}
     </div>
   );

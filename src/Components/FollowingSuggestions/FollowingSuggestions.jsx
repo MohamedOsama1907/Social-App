@@ -7,14 +7,15 @@ import {
   X,
 } from "lucide-react";
 import { UserContext } from "../Context/use.context";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import axios from "axios";
 import { followUser, isUserFollowing } from "../UserServices/UserServices";
 import { Link } from "react-router";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 export default function FollowingSuggestions() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [suggestions, setSuggestions] = useState(null);
+  const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState(() => new Set());
   const [followingState, setFollowingState] = useState({});
   const { token, userInfo } = useContext(UserContext);
 
@@ -26,7 +27,11 @@ export default function FollowingSuggestions() {
       setCurrentPage((page) => page - 1);
     }
   }
-  async function fetchFollowingSuggestions() {
+  const { data: suggestionData } = useQuery({
+    queryKey: ["getFollowingSuggestions", currentPage, token],
+    enabled: Boolean(token),
+    refetchOnMount: false,
+    queryFn: async () => {
     const config = {
       url: `https://route-posts.routemisr.com/users/suggestions?page=${currentPage}&limit=5`,
       headers: {
@@ -35,64 +40,34 @@ export default function FollowingSuggestions() {
       method: "GET",
     };
     const { data } = await axios.request(config);
-    if (data.success) {
-      const suggestions = data.data.suggestions;
-      setSuggestions(suggestions);
-      setFollowingState((previous) => {
-        const nextState = { ...previous };
-        suggestions.forEach((person) => {
-          const personId = person._id ?? person.id;
-          if (typeof nextState[personId] !== "boolean") {
-            nextState[personId] = Boolean(
-              person.isFollowing ?? isUserFollowing(userInfo, personId),
-            );
-          }
-        });
-        return nextState;
-      });
-    }
-  }
-  useEffect(() => {
-    fetchFollowingSuggestions();
-  }, [currentPage, token, userInfo?.following]);
+    if (!data.success) throw new Error(data.message || "Could not load suggestions");
+    return data.data.suggestions;
+    },
+  });
+  const suggestions = (suggestionData ?? []).filter(
+    (person) => !dismissedSuggestionIds.has(String(person._id ?? person.id)),
+  );
 
-  useEffect(() => {
-    setFollowingState({});
-    setSuggestions(null);
-  }, [token, userInfo?._id, userInfo?.id]);
-
-  async function handleFollowUser(person) {
-    try {
-      const personId = person._id ?? person.id;
+  const followSuggestionMutation = useMutation({
+    mutationFn: (personId) => followUser(token, personId),
+    onSuccess: (data, personId) => {
+      if (!data.success) return;
       const currentlyFollowing = Boolean(followingState[personId]);
-      const data = await followUser(token, personId);
-      if (data.success) {
-        // Use an object to keep a separate following state for each user,
-        // so updating one user's state doesn't affect the other users
-        /*
-        {
-            "123": true,
-            "456": true
-        }
-        */
-        setFollowingState((prev) => ({
-          ...prev,
-          [personId]: Boolean(
-            data.data.following ?? data.data.isFollowing ?? !currentlyFollowing,
-          ),
-        }));
-      }
-    } catch (error) {
-    }
+      setFollowingState((prev) => ({
+        ...prev,
+        [personId]: Boolean(data.data.following ?? data.data.isFollowing ?? !currentlyFollowing),
+      }));
+    },
+  });
+  function handleFollowUser(person) {
+    followSuggestionMutation.mutate(person._id ?? person.id);
   }
   function handleDismissSuggestion(personId) {
-    // return array that i want to appeat after click on X
+    setDismissedSuggestionIds((previous) => new Set(previous).add(String(personId)));
     const currentSuggestion = suggestions.filter(
       (person) => String(person._id ?? person.id) !== String(personId),
     );
-    if (currentSuggestion.length > 0) {
-      setSuggestions(currentSuggestion);
-    } else {
+    if (currentSuggestion.length === 0) {
       handleNextPage();
     }
   }
@@ -118,7 +93,7 @@ export default function FollowingSuggestions() {
       </header>
 
       <ul className="divide-y divide-[#eeeeec] px-4 sm:px-5">
-        {suggestions ? (
+        {suggestionData ? (
           suggestions.map((person) => {
             const personId = person._id ?? person.id;
             const isFollowing =

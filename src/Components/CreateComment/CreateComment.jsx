@@ -6,6 +6,7 @@ import * as yup from "yup";
 import { UserContext } from "../Context/use.context";
 import axios from "axios";
 import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
 
 const DEFAULT_PROFILE_PHOTO =
   "https://pub-3cba56bacf9f4965bbb0989e07dada12.r2.dev/linkedPosts/default-profile.png";
@@ -14,6 +15,17 @@ const MAX_TEXTAREA_HEIGHT = 144;
 
 export default function CreateComment({ id, getPost, getAllComments }) {
   const { token, userInfo } = useContext(UserContext);
+  const createCommentMutation = useMutation({
+    mutationFn: async (formData) => {
+      const { data } = await axios.request({
+        url: `https://route-posts.routemisr.com/posts/${id}/comments`,
+        headers: { Authorization: `Bearer ${token}` },
+        method: "POST",
+        data: formData,
+      });
+      return data;
+    },
+  });
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
@@ -60,15 +72,7 @@ export default function CreateComment({ id, getPost, getAllComments }) {
         if (values.image) {
           formData.append("image", values.image);
         }
-        const config = {
-          url: `https://route-posts.routemisr.com/posts/${id}/comments`,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          method: "POST",
-          data: formData,
-        };
-        const { data } = await axios.request(config);
+        const data = await createCommentMutation.mutateAsync(formData);
         if (data.success) {
           toast.success(data.message);
           await getPost?.();

@@ -15,9 +15,10 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import PublicRoute from "./Components/PublicRoute/PublicRoute";
 import { Detector } from "react-detect-offline";
 import OfflinePage from "./Page/OfflinePage/OfflinePage";
-
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 /* Nested Routes to make the side bar in many pages */
 /*Open close tag ===> parent route */
+const queryClient = new QueryClient();
 const router = createBrowserRouter([
   {
     path: "/",
@@ -86,23 +87,25 @@ const router = createBrowserRouter([
 function App() {
   return (
     <>
-      <UserProvider>
-        <Detector
-          polling={false}
-          render={({ online }) =>
-            online ? <RouterProvider router={router} /> : <OfflinePage />
-          }
-        />
+      <QueryClientProvider client={queryClient}>
+        <UserProvider>
+          <Detector
+            polling={false}
+            render={({ online }) =>
+              online ? <RouterProvider router={router} /> : <OfflinePage />
+            }
+          />
 
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            classNames: {
-              toast: "bg-[#16161a]! text-white!",
-            },
-          }}
-        />
-      </UserProvider>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              classNames: {
+                toast: "bg-[#16161a]! text-white!",
+              },
+            }}
+          />
+        </UserProvider>
+      </QueryClientProvider>
     </>
   );
 }

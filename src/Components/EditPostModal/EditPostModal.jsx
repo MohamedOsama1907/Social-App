@@ -1,4 +1,5 @@
 import { useContext, useEffect, useRef, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import {
   X,
   LoaderCircle,
@@ -16,6 +17,20 @@ export default function EditPostModal({ post, setIsEditModal, onPostUpdated }) {
   const { token } = useContext(UserContext);
   const [imagePreview, setImagePreview] = useState(post?.image || null);
   const [imageRemoved, setImageRemoved] = useState(false);
+  const editPostMutation = useMutation({
+    mutationFn: async (formData) => {
+      const { data } = await axios.request({
+        url: `https://route-posts.routemisr.com/posts/${post._id}`,
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        data: formData,
+      });
+      if (data?.success === false) {
+        throw new Error(data?.message || "We couldn’t save your changes.");
+      }
+      return data;
+    },
+  });
   //   ====================================
   const dialogRef = useRef(null);
   const closeButtonRef = useRef(null);
@@ -80,20 +95,7 @@ export default function EditPostModal({ post, setIsEditModal, onPostUpdated }) {
           formData.append("image", values.image);
         }
 
-        const config = {
-          url: `https://route-posts.routemisr.com/posts/${post._id}`,
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          data: formData,
-        };
-
-        const { data } = await axios.request(config);
-
-        if (data?.success === false) {
-          throw new Error(data?.message || "We couldn’t save your changes.");
-        }
+        const data = await editPostMutation.mutateAsync(formData);
 
         toast.success(data?.message || "Post updated successfully.");
         await onPostUpdated?.(data);

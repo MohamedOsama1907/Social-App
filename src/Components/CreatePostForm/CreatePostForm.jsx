@@ -15,6 +15,7 @@ import { UserContext } from "../Context/use.context";
 import { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
 
 const MAX_TEXTAREA_HEIGHT = 180;
 
@@ -23,6 +24,17 @@ export default function CreatePostForm({ onPostCreated }) {
   const [imagePreview, setImagePreview] = useState(null);
   const textareaRef = useRef(null);
   const { userInfo } = useContext(UserContext);
+  const createPostMutation = useMutation({
+    mutationFn: async (formData) => {
+      const { data } = await axios.request({
+        url: "https://route-posts.routemisr.com/posts",
+        headers: { Authorization: `Bearer ${token}` },
+        method: "POST",
+        data: formData,
+      });
+      return data;
+    },
+  });
   const schema = yup.object({
     body: yup.string().min(3, "body must be at least 3 characters"),
     image: yup
@@ -74,15 +86,7 @@ export default function CreatePostForm({ onPostCreated }) {
         if (values.image) {
           formData.append("image", values.image);
         }
-        const config = {
-          url: "https://route-posts.routemisr.com/posts",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          method: "POST",
-          data: formData,
-        };
-        const { data } = await axios.request(config);
+        const data = await createPostMutation.mutateAsync(formData);
         if (data.success) {
           toast.success(data.message);
           // to appear the created post
