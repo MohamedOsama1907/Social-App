@@ -25,7 +25,7 @@ import {
   followUser,
   isUserFollowing,
 } from "../UserServices/UserServices";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { formatRelativePostTime, updatePostInList, removePostFromList } from "../../lib/utils";
 // import { followUser } from "../UserServices/UserServices";
 //* post card component
@@ -37,6 +37,7 @@ export default function PostCard({
 }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { token, userInfo } = useContext(UserContext);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isLikeModalOpen, setIsLikeModalOpen] = useState(false);
@@ -65,6 +66,7 @@ export default function PostCard({
           post.user?.isFollowing ?? isUserFollowing(userInfo, postOwnerId),
         );
   function handlePostCardClick(event) {
+    if (pathname.startsWith("/posts/postDetails/")) return;
     if (
       event.target.closest(
         "a, button, input, textarea, select, [role='menu'], [data-post-card-action]",
@@ -77,6 +79,7 @@ export default function PostCard({
     if (postId) navigate(`/posts/postDetails/${postId}`);
   }
   function handleSharedPostClick(event) {
+    if (pathname.startsWith("/posts/postDetails/")) return;
     if (event.target.closest("a, button")) return;
     event.stopPropagation();
     const sharedPostId = post.sharedPost?._id ?? post.sharedPost?.id;
@@ -375,7 +378,7 @@ export default function PostCard({
 
         <Link to={`/posts/postDetails/${post._id}`}>
           {post.body && (
-            <p className="px-4 pb-5 text-sm leading-6 text-[#16161a] sm:px-6 sm:text-base lg:px-7">
+            <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] px-4 pb-5 text-sm leading-6 text-[#16161a] sm:px-6 sm:text-base lg:px-7">
               {post.body}
             </p>
           )}
@@ -435,7 +438,7 @@ export default function PostCard({
             </div>
 
             {post.sharedPost.body && (
-              <p className="px-3.5 pb-3 text-xs leading-5 text-[#16161a] sm:px-4 sm:text-sm">
+              <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] px-3.5 pb-3 text-xs leading-5 text-[#16161a] sm:px-4 sm:text-sm">
                 {post.sharedPost.body.trim()}
               </p>
             )}
@@ -628,7 +631,7 @@ export default function PostCard({
                           to={`/posts/postDetails/${post._id}`}
                           className="block cursor-pointer">
                           {post.topComment.content && (
-                            <p className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-[#424249] sm:text-sm">
+                            <p className="mt-1 min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-xs leading-5 text-[#424249] sm:text-sm">
                               {post.topComment.content}
                             </p>
                           )}

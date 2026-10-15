@@ -600,7 +600,7 @@ export default function PostDetails() {
                               </div>
 
                               {comment.content && (
-                                <p className="mt-0.5 w-full min-w-0 whitespace-normal break-words text-xs leading-5 text-[#424249] sm:text-[13px]">
+                                <p className="mt-0.5 w-full min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-xs leading-5 text-[#424249] sm:text-[13px]">
                                   {comment.content}
                                 </p>
                               )}
@@ -756,7 +756,7 @@ export default function PostDetails() {
                                               </div>
 
                                               {reply.content && (
-                                                <p className="mt-0.5 whitespace-pre-wrap break-words text-xs leading-5 text-[#424249] sm:text-[13px]">
+                                                <p className="mt-0.5 min-w-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-xs leading-5 text-[#424249] sm:text-[13px]">
                                                   {reply.content}
                                                 </p>
                                               )}

@@ -427,7 +427,7 @@ export default function EditPostModal({ post, setIsEditModal, onPostUpdated }) {
                 </div>
 
                 {post.sharedPost.body && (
-                  <p className="whitespace-pre-wrap break-words px-3.5 pb-3 text-xs leading-5 text-[#16161a] sm:px-4 sm:text-sm">
+                  <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] px-3.5 pb-3 text-xs leading-5 text-[#16161a] sm:px-4 sm:text-sm">
                     {post.sharedPost.body.trim()}
                   </p>
                 )}

@@ -167,7 +167,7 @@ export default function SharePostModal({
               </div>
 
               {post.body && (
-                <p className="px-4 pb-5 text-sm leading-6 text-[#16161a] sm:px-6 sm:text-base lg:px-7">
+                <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] px-4 pb-5 text-sm leading-6 text-[#16161a] sm:px-6 sm:text-base lg:px-7">
                   {post.body}
                 </p>
               )}
@@ -209,7 +209,7 @@ export default function SharePostModal({
                   </div>
 
                   {post.sharedPost.body && (
-                    <p className="px-3.5 pb-3 text-xs leading-5 text-[#16161a] sm:px-4 sm:text-sm">
+                    <p className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] px-3.5 pb-3 text-xs leading-5 text-[#16161a] sm:px-4 sm:text-sm">
                       {post.sharedPost.body.trim()}
                     </p>
                   )}
