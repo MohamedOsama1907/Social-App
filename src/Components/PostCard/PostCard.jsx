@@ -272,7 +272,10 @@ export default function PostCard({
                       aria-pressed={isFollowing}
                       className="inline-flex h-7 shrink-0 cursor-pointer items-center justify-center gap-1 rounded-lg  text-[#16161a] text-[10px] font-semibold transition-colors  sm:h-8 sm:px-2.5 sm:text-xs">
                       {isFollowing ? (
-                        <Check className="size-4" aria-hidden="true" />
+                        followingOverride?.userId === String(postOwnerId) &&
+                        followingOverride.value ? (
+                          <Check className="size-4" aria-hidden="true" />
+                        ) : null
                       ) : (
                         <UserPlus className="size-4" aria-hidden="true" />
                       )}
